@@ -7,7 +7,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Users, Receipt, Trash2, UserPlus, Info, History, LayoutDashboard, ChevronRight, CheckCircle2, TrendingUp, LogOut, House, X, Settings, Wallet } from 'lucide-react';
 import { ExtractedReceipt, Person, PERSON_COLORS, SavedReceipt } from './types';
-import { processReceipt } from './services/geminiService';
+import { processReceipt } from './services/claudeService';
 import { cn, formatCurrency, toDateInputValue, toIsoDateLocal } from './lib/utils';
 import { fetchUserProfile, saveUserProfile, DEFAULT_MY_DISPLAY_NAME } from './lib/userProfile';
 import { aggregateOwedBalances } from './lib/owedBalances';
