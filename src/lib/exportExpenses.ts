@@ -437,8 +437,11 @@ class PdfReport {
     lines: { label: string; value: string; muted?: string }[];
   }) {
     const wrappedTitle = wrapLine(options.title, 44);
-    const lineCount = options.lines.reduce((sum, line) => sum + Math.max(1, wrapLine(line.label, 54).length), 0);
-    const height = 62 + wrappedTitle.length * 11 + lineCount * 18;
+    const lineCount = options.lines.reduce(
+      (sum, line) => sum + Math.max(1, wrapLine(line.label, 54).length) + (line.muted ? 1 : 0),
+      0
+    );
+    const height = 62 + wrappedTitle.length * 11 + lineCount * 16;
     this.ensure(Math.min(height, 260));
 
     this.rect(PDF.margin, this.y - height + 8, PDF.contentWidth, height, '#FFFFFF', '#E2E8F0');
@@ -462,7 +465,9 @@ class PdfReport {
         this.y -= 16;
       });
       if (line.muted) {
-        this.text(line.muted, PDF.margin + 18, this.y + 3, 7, '#94A3B8');
+        this.ensure(14);
+        this.text(line.muted, PDF.margin + 18, this.y + 4, 7, '#94A3B8');
+        this.y -= 12;
       }
     });
     this.y -= 18;

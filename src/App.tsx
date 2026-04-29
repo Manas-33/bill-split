@@ -412,6 +412,14 @@ export default function App() {
     setReceipt({ ...receipt, items: updatedItems });
   };
 
+  const updateItemCategory = (itemId: string, newCategory: string) => {
+    if (!receipt) return;
+    const updatedItems = receipt.items.map(item =>
+      item.id === itemId ? { ...item, category: newCategory } : item
+    );
+    setReceipt({ ...receipt, items: updatedItems });
+  };
+
   const updateItemPrice = (itemId: string, newPrice: number) => {
     if (!receipt) return;
     const updatedItems = receipt.items.map(item =>
@@ -1000,6 +1008,7 @@ export default function App() {
                     onRemoveShare={removeShare}
                     onUpdatePrice={updateItemPrice}
                     onUpdateItemName={updateItemName}
+                    onUpdateCategory={updateItemCategory}
                     onUpdateQuantity={updateItemQuantity}
                     onDeleteItem={deleteItem}
                     onAddItem={addItem}

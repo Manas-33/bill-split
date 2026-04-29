@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ExtractedReceipt, Person } from '../types';
+import { CATEGORIES, ExtractedReceipt, Person } from '../types';
 import { cn, formatCurrency } from '../lib/utils';
-import { Tag, User, Plus, Trash2, Minus } from 'lucide-react';
+import { Tag, User, Plus, Trash2, Minus, ChevronDown } from 'lucide-react';
 
 interface ReceiptViewProps {
   receipt: ExtractedReceipt;
@@ -14,6 +14,7 @@ interface ReceiptViewProps {
   onRemoveShare: (itemId: string, personId: string) => void;
   onUpdatePrice: (itemId: string, newPrice: number) => void;
   onUpdateItemName: (itemId: string, newName: string) => void;
+  onUpdateCategory: (itemId: string, newCategory: string) => void;
   onUpdateQuantity: (itemId: string, newQuantity: number) => void;
   onDeleteItem: (itemId: string) => void;
   onAddItem: () => void;
@@ -27,6 +28,7 @@ export default function ReceiptView({
   onRemoveShare,
   onUpdatePrice,
   onUpdateItemName,
+  onUpdateCategory,
   onUpdateQuantity,
   onDeleteItem,
   onAddItem,
@@ -57,10 +59,28 @@ export default function ReceiptView({
                     placeholder="Item name"
                   />
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-[9px] font-bold text-slate-500 uppercase tracking-tight">
+                    <label
+                      className="group/cat relative inline-flex items-center gap-1.5 pl-2 pr-1.5 py-0.5 rounded-full bg-slate-100 text-[9px] font-bold text-slate-500 uppercase tracking-tight cursor-pointer hover:bg-slate-200 transition-colors focus-within:ring-2 focus-within:ring-indigo-400"
+                      aria-label={`Category for ${item.name || 'item'}`}
+                    >
                       <Tag className="w-2.5 h-2.5" />
-                      {item.category}
-                    </span>
+                      <span>{item.category}</span>
+                      <ChevronDown className="w-2.5 h-2.5 opacity-60 group-hover/cat:opacity-100" />
+                      <select
+                        value={item.category}
+                        onChange={(e) => onUpdateCategory(item.id, e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      >
+                        {!CATEGORIES.includes(item.category) && item.category && (
+                          <option value={item.category}>{item.category}</option>
+                        )}
+                        {CATEGORIES.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   </div>
                 </div>
               </td>
