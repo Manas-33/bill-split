@@ -5,6 +5,7 @@
 
 import { ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { SavedReceipt } from '../types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -42,4 +43,23 @@ export function toDateInputValue(raw: string | undefined): string {
     return toIsoDateLocal(parsed);
   }
   return toIsoDateLocal(new Date());
+}
+
+/**
+ * Date shown for a saved receipt: transaction date from `data.date` when parseable,
+ * otherwise when the split was saved (`timestamp`).
+ */
+export function getReceiptDate(entry: Pick<SavedReceipt, 'data' | 'timestamp'>): Date {
+  const dateStr = entry.data.date?.trim();
+  if (dateStr) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+    if (m) {
+      return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    }
+    const d = new Date(dateStr);
+    if (!Number.isNaN(d.getTime())) {
+      return d;
+    }
+  }
+  return new Date(entry.timestamp);
 }

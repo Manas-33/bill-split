@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Users, Receipt, Trash2, UserPlus, Info, History, LayoutDashboard, ChevronRight, CheckCircle2, TrendingUp, LogOut, House, X, Settings, Wallet, Sparkles, Clock3, Moon, Sun } from 'lucide-react';
 import { ExtractedReceipt, Person, PERSON_COLORS, SavedReceipt } from './types';
 import { processReceipt } from './services/claudeService';
-import { cn, formatCurrency, toDateInputValue, toIsoDateLocal } from './lib/utils';
+import { cn, formatCurrency, getReceiptDate, toDateInputValue, toIsoDateLocal } from './lib/utils';
 import { readDomIsDark, getStoredTheme, toggleStoredTheme } from './lib/theme';
 import { fetchUserProfile, saveUserProfile, DEFAULT_MY_DISPLAY_NAME } from './lib/userProfile';
 import { aggregateOwedBalances } from './lib/owedBalances';
@@ -111,10 +111,7 @@ export default function App() {
     const groups = new Map<string, { monthKey: string; monthLabel: string; entries: SavedReceipt[] }>();
 
     history.forEach((entry) => {
-      const dateMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(entry.data.date || '');
-      const date = dateMatch
-        ? new Date(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]))
-        : new Date(entry.timestamp);
+      const date = getReceiptDate(entry);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthLabel = date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
       const group = groups.get(monthKey);
@@ -762,7 +759,7 @@ export default function App() {
                                   </div>
                                   <div className="min-w-0">
                                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                      {new Date(entry.timestamp).toLocaleDateString(undefined, {
+                                      {getReceiptDate(entry).toLocaleDateString(undefined, {
                                         month: 'short',
                                         day: 'numeric',
                                         year: 'numeric',

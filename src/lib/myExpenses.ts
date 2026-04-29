@@ -4,6 +4,7 @@
  */
 
 import { SavedReceipt } from '../types';
+import { getReceiptDate } from './utils';
 
 export interface ExpenseReceiptEntry {
   id: string;
@@ -44,18 +45,6 @@ export interface MyExpensesResult {
 }
 
 const TAX_FEES_CATEGORY = 'Tax & Fees';
-
-function parseReceiptDate(dateStr: string | undefined, fallbackTs: number): Date {
-  if (dateStr) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
-    if (m) {
-      return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    }
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return new Date(fallbackTs);
-}
 
 function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -129,7 +118,7 @@ export function aggregateMyExpenses(
       categoryMap.set(cat, (categoryMap.get(cat) || 0) + amt);
     });
 
-    const d = parseReceiptDate(entry.data.date, entry.timestamp);
+    const d = getReceiptDate(entry);
     const mKey = monthKey(d);
     const mLabel = monthLabel(d);
     const existing = monthMap.get(mKey);
