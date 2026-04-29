@@ -5,12 +5,13 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Users, Receipt, Trash2, UserPlus, Info, History, LayoutDashboard, ChevronRight, CheckCircle2, TrendingUp, LogOut, House, X, Settings, Wallet } from 'lucide-react';
+import { Plus, Users, Receipt, Trash2, UserPlus, Info, History, LayoutDashboard, ChevronRight, CheckCircle2, TrendingUp, LogOut, House, X, Settings, Wallet, Sparkles, Clock3 } from 'lucide-react';
 import { ExtractedReceipt, Person, PERSON_COLORS, SavedReceipt } from './types';
 import { processReceipt } from './services/claudeService';
 import { cn, formatCurrency, toDateInputValue, toIsoDateLocal } from './lib/utils';
 import { fetchUserProfile, saveUserProfile, DEFAULT_MY_DISPLAY_NAME } from './lib/userProfile';
 import { aggregateOwedBalances } from './lib/owedBalances';
+import { aggregateMyExpenses } from './lib/myExpenses';
 import ReceiptUploader from './components/ReceiptUploader';
 import ReceiptView from './components/ReceiptView';
 import SplitSummary from './components/SplitSummary';
@@ -84,6 +85,35 @@ export default function App() {
     () => aggregateOwedBalances(history, myDisplayName),
     [history, myDisplayName]
   );
+  const myExpenses = useMemo(
+    () => aggregateMyExpenses(history, myDisplayName),
+    [history, myDisplayName]
+  );
+  const myExpenseByReceiptId = useMemo(
+    () => new Map(myExpenses.entries.map((entry) => [entry.id, entry])),
+    [myExpenses]
+  );
+  const groupedHistory = useMemo(() => {
+    const groups = new Map<string, { monthKey: string; monthLabel: string; entries: SavedReceipt[] }>();
+
+    history.forEach((entry) => {
+      const dateMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(entry.data.date || '');
+      const date = dateMatch
+        ? new Date(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]))
+        : new Date(entry.timestamp);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      const group = groups.get(monthKey);
+
+      if (group) {
+        group.entries.push(entry);
+      } else {
+        groups.set(monthKey, { monthKey, monthLabel, entries: [entry] });
+      }
+    });
+
+    return Array.from(groups.values()).sort((a, b) => (a.monthKey < b.monthKey ? 1 : -1));
+  }, [history]);
   const owedToYouCurrency = history[0]?.data.currency ?? 'USD';
 
   const openSettings = () => {
@@ -468,109 +498,131 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-6 lg:p-8">
-      {/* Header Bento Box */}
-      <header className="max-w-7xl mx-auto mb-6 grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="md:col-span-4 bg-white border border-slate-200 rounded-3xl p-6 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3">
+      <header className="max-w-7xl mx-auto mb-6">
+        <div className="bg-white/95 border border-slate-200 rounded-3xl shadow-sm px-3 py-3 md:px-4 flex flex-col xl:flex-row xl:items-center gap-3">
+          <div className="flex items-center justify-between gap-4 xl:w-auto">
+            <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={requestHome}
               title="Home"
               aria-label="Go to home"
-              className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 flex items-center justify-center transition-colors shrink-0"
+                className="w-11 h-11 rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 flex items-center justify-center transition-colors shrink-0"
             >
               <House className="w-5 h-5" />
             </button>
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-              <Receipt className="w-6 h-6" />
+              <div className="w-11 h-11 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100 shrink-0">
+                <Receipt className="w-5 h-5" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight leading-tight">BillSplit AI</h1>
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight leading-tight truncate">
+                  BillSplit AI
+                </h1>
+                <p className="text-[11px] font-semibold text-slate-400 truncate">
+                  {user ? user.email || myDisplayName : 'Receipt splitting workspace'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={openSettings}
+                title="Name settings"
+                aria-label="Name settings"
+                className="w-10 h-10 rounded-2xl border border-slate-200 bg-white text-slate-500 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 flex items-center justify-center transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              {user ? (
                 <button
-                  type="button"
-                  onClick={openSettings}
-                  title="Settings"
-                  aria-label="Settings"
-                  className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 uppercase tracking-widest flex items-center gap-1 transition-colors"
+                  onClick={handleSignOut}
+                  title="Sign out"
+                  aria-label="Sign out"
+                  className="w-10 h-10 rounded-2xl border border-slate-200 bg-white text-slate-500 hover:bg-red-50 hover:border-red-100 hover:text-red-500 flex items-center justify-center transition-colors"
                 >
-                  <Settings className="w-3 h-3" /> Name
+                  <LogOut className="w-4 h-4" />
                 </button>
-                {user ? (
-                  <button onClick={handleSignOut} className="text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-widest flex items-center gap-1 transition-colors">
-                    <LogOut className="w-3 h-3" /> Sign Out
-                  </button>
-                ) : (
-                  <button onClick={handleSignIn} className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 uppercase tracking-widest flex items-center gap-1 transition-colors">
-                    Sign In
-                  </button>
+              ) : (
+                <button
+                  onClick={handleSignIn}
+                  className="h-10 px-4 rounded-2xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-100"
+                >
+                  Sign in
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col lg:flex-row lg:items-center gap-3 min-w-0">
+            <nav className="flex-1 bg-slate-50 p-1 rounded-2xl overflow-x-auto">
+              <div className="grid grid-cols-4 min-w-[420px] md:min-w-0 gap-1">
+                <button
+                  onClick={() => setCurrentView('main')}
+                  className={cn("min-h-10 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5", currentView === 'main' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" /> Split
+                </button>
+                <button
+                  onClick={() => setCurrentView('history')}
+                  className={cn("min-h-10 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5", currentView === 'history' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}
+                >
+                  <History className="w-3.5 h-3.5" /> History
+                </button>
+                <button
+                  onClick={() => setCurrentView('balances')}
+                  className={cn("min-h-10 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5", currentView === 'balances' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}
+                >
+                  <Users className="w-3.5 h-3.5" /> Totals
+                </button>
+                <button
+                  onClick={() => setCurrentView('expenses')}
+                  className={cn("min-h-10 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5", currentView === 'expenses' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}
+                >
+                  <Wallet className="w-3.5 h-3.5" /> Expenses
+                </button>
+              </div>
+            </nav>
+
+            <div className="flex items-center gap-2 lg:justify-end">
+              <div className="hidden sm:flex -space-x-2 px-2">
+                {people.slice(0, 3).map(p => (
+                  <div
+                    key={p.id}
+                    className="w-8 h-8 rounded-full border-2 border-white shadow-sm flex items-center justify-center text-[10px] font-bold text-white"
+                    style={{ backgroundColor: p.color }}
+                    title={p.name}
+                  >
+                    {p.name[0]}
+                  </div>
+                ))}
+                {people.length > 3 && (
+                  <div className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-400">
+                    +{people.length - 3}
+                  </div>
                 )}
               </div>
+
+              <div className="h-10 min-w-0 rounded-2xl bg-indigo-600 px-4 text-white flex items-center gap-3 shadow-lg shadow-indigo-100">
+                <TrendingUp className="w-4 h-4 opacity-80 shrink-0" />
+                <div className="leading-none">
+                  <p className="text-[9px] font-black uppercase tracking-widest opacity-70">Owed</p>
+                  <p className="text-sm font-bold whitespace-nowrap">
+                    {formatCurrency(grandTotalOwedToYou, owedToYouCurrency)}
+                  </p>
+                </div>
+              </div>
+
+              {receipt && currentView === 'main' && (
+                <button
+                  onClick={saveToHistory}
+                  className="h-10 px-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200 whitespace-nowrap text-sm"
+                >
+                  {editingReceiptId ? 'Update' : 'Save'}
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex -space-x-2">
-            {people.slice(0, 3).map(p => (
-              <div 
-                key={p.id}
-                className="w-8 h-8 rounded-full border-2 border-white shadow-sm flex items-center justify-center text-[10px] font-bold text-white"
-                style={{ backgroundColor: p.color }}
-              >
-                {p.name[0]}
-              </div>
-            ))}
-            {people.length > 3 && (
-              <div className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-400">
-                +{people.length - 3}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="md:col-span-3 bg-indigo-600 rounded-3xl p-6 text-white flex flex-col justify-between shadow-lg shadow-indigo-200 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-            <TrendingUp className="w-16 h-16" />
-          </div>
-          <span className="text-xs font-semibold uppercase tracking-wider opacity-80">Owed to you</span>
-          <div className="text-3xl font-bold">
-            {formatCurrency(grandTotalOwedToYou, owedToYouCurrency)}
-          </div>
-        </div>
-
-        <div className="md:col-span-5 bg-white border border-slate-200 rounded-3xl p-2 flex gap-2 shadow-sm items-center">
-          <div className="flex-1 flex bg-slate-50 p-1 rounded-2xl w-full">
-            <button 
-              onClick={() => setCurrentView('main')}
-              className={cn("flex-1 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5", currentView === 'main' ? "bg-white text-slate-800 shadow-sm py-2" : "text-slate-400 hover:text-slate-600 py-2")}
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" /> Split
-            </button>
-            <button 
-              onClick={() => setCurrentView('history')}
-              className={cn("flex-1 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5", currentView === 'history' ? "bg-white text-slate-800 shadow-sm py-2" : "text-slate-400 hover:text-slate-600 py-2")}
-            >
-              <History className="w-3.5 h-3.5" /> History
-            </button>
-            <button
-              onClick={() => setCurrentView('balances')}
-              className={cn("flex-1 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5", currentView === 'balances' ? "bg-white text-slate-800 shadow-sm py-2" : "text-slate-400 hover:text-slate-600 py-2")}
-            >
-              <Users className="w-3.5 h-3.5" /> Totals
-            </button>
-            <button
-              onClick={() => setCurrentView('expenses')}
-              className={cn("flex-1 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5", currentView === 'expenses' ? "bg-white text-slate-800 shadow-sm py-2" : "text-slate-400 hover:text-slate-600 py-2")}
-            >
-              <Wallet className="w-3.5 h-3.5" /> Expenses
-            </button>
-          </div>
-          {receipt && currentView === 'main' && (
-            <button 
-              onClick={saveToHistory}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-100 whitespace-nowrap text-sm"
-            >
-              {editingReceiptId ? 'Update' : 'Save'}
-            </button>
-          )}
         </div>
       </header>
 
@@ -600,54 +652,160 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="space-y-6"
             >
-              {history.length === 0 ? (
-                <div className="col-span-full py-24 text-center space-y-4">
-                   <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300">
-                     <History className="w-10 h-10" />
-                   </div>
-                   <h3 className="text-xl font-bold text-slate-400">No history yet</h3>
-                   <button onClick={() => setCurrentView('main')} className="text-indigo-600 font-bold hover:underline">Start a new split</button>
+              <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-5 md:p-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2">
+                    Saved receipts
+                  </p>
+                  <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
+                    Split history
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-2 max-w-xl">
+                    Reopen past splits, update assignments, or clean up receipts you no longer need.
+                  </p>
                 </div>
-              ) : (
-                history.map((entry) => (
-                  <div key={entry.id} className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative group">
-                    <button 
-                      onClick={() => deleteFromHistory(entry.id)}
-                      className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500">
-                           <Receipt className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(entry.timestamp).toLocaleDateString()}</p>
-                          <h4 className="font-bold text-slate-900 truncate pr-8">{entry.data.merchantName || 'Receipt Split'}</h4>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-end">
-                        <div className="text-2xl font-bold text-indigo-600">
-                          {formatCurrency(entry.data.total, entry.data.currency)}
-                        </div>
-                        <div className="flex -space-x-1.5">
-                          {entry.people.map(p => (
-                             <div key={p.id} className="w-6 h-6 rounded-full border border-white" style={{ backgroundColor: p.color }} />
-                          ))}
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => loadFromHistory(entry)}
-                        className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                      >
-                        Load Recipe <ChevronRight className="w-4 h-4" />
-                      </button>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4 flex items-center gap-3">
+                    <History className="w-4 h-4 text-slate-400" />
+                    <div className="leading-none">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Receipts</p>
+                      <p className="text-sm font-bold text-slate-900">{history.length}</p>
                     </div>
                   </div>
-                ))
+                  <button
+                    onClick={() => setCurrentView('main')}
+                    className="h-12 px-5 rounded-2xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-100 flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    New split
+                  </button>
+                </div>
+              </div>
+
+              {history.length === 0 ? (
+                <div className="bg-white border border-dashed border-slate-300 rounded-3xl py-20 px-6 text-center">
+                  <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto text-indigo-500 mb-5">
+                    <History className="w-10 h-10" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">No saved receipts yet</h3>
+                  <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
+                    Once you save a split, it will appear here with the total, date, and participants.
+                  </p>
+                  <button
+                    onClick={() => setCurrentView('main')}
+                    className="mt-6 px-5 py-3 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors"
+                  >
+                    Start a new split
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {groupedHistory.map((group) => (
+                    <section key={group.monthKey} className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900">{group.monthLabel}</h3>
+                          <p className="text-xs font-semibold text-slate-400">
+                            {group.entries.length} {group.entries.length === 1 ? 'receipt' : 'receipts'}
+                          </p>
+                        </div>
+                        <div className="h-px bg-slate-200 flex-1" />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        {group.entries.map((entry) => {
+                          const myReceiptExpense = myExpenseByReceiptId.get(entry.id);
+                          return (
+                            <div key={entry.id} className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all relative group overflow-hidden">
+                              <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-indigo-200 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-11 h-11 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center text-slate-500 shrink-0">
+                                    <Receipt className="w-5 h-5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                      {new Date(entry.timestamp).toLocaleDateString(undefined, {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                      })}
+                                    </p>
+                                    <h4 className="font-bold text-slate-900 truncate">
+                                      {entry.data.merchantName || 'Receipt Split'}
+                                    </h4>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => deleteFromHistory(entry.id)}
+                                  title="Delete receipt"
+                                  aria-label="Delete receipt"
+                                  className="w-9 h-9 rounded-xl text-slate-300 hover:bg-red-50 hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all flex items-center justify-center shrink-0"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+
+                              <div className="mt-6 flex items-end justify-between gap-4">
+                                <div>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                    Total
+                                  </p>
+                                  <div className="text-3xl font-bold text-indigo-600 tracking-tight">
+                                    {formatCurrency(entry.data.total, entry.data.currency)}
+                                  </div>
+                                </div>
+                                <div className="flex -space-x-1.5 shrink-0">
+                                  {entry.people.slice(0, 5).map(p => (
+                                    <div
+                                      key={p.id}
+                                      className="w-7 h-7 rounded-full border-2 border-white shadow-sm flex items-center justify-center text-[9px] font-bold text-white"
+                                      style={{ backgroundColor: p.color }}
+                                      title={p.name}
+                                    >
+                                      {p.name[0]}
+                                    </div>
+                                  ))}
+                                  {entry.people.length > 5 && (
+                                    <div className="w-7 h-7 rounded-full bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center text-[9px] font-bold text-slate-400">
+                                      +{entry.people.length - 5}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
+                                <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Items</p>
+                                  <p className="mt-1 font-bold text-slate-800">{entry.data.items.length}</p>
+                                </div>
+                                <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">People</p>
+                                  <p className="mt-1 font-bold text-slate-800">{entry.people.length}</p>
+                                </div>
+                                <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">You spent</p>
+                                  <p className="mt-1 font-bold text-slate-800">
+                                    {formatCurrency(myReceiptExpense?.total ?? 0, myReceiptExpense?.currency ?? entry.data.currency)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => loadFromHistory(entry)}
+                                className="mt-5 w-full h-12 bg-slate-900 hover:bg-indigo-600 text-white rounded-2xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                              >
+                                Load receipt <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
+                </div>
               )}
             </motion.div>
           ) : !receipt ? (
@@ -656,38 +814,127 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="max-w-xl mx-auto space-y-8"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
             >
-              <div className="text-center space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight text-slate-900 uppercase">Process Receipt</h2>
-                <p className="text-slate-500 font-medium italic">Our AI identifies items, taxes, and totals instantly.</p>
-              </div>
+              <div className="lg:col-span-5 bg-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-slate-200 overflow-hidden relative min-h-[420px] flex flex-col justify-between">
+                <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full border border-white/10" />
+                <div className="absolute right-8 bottom-8 w-28 h-28 rounded-full border border-indigo-400/20" />
 
-              <ReceiptUploader 
-                onUpload={handleFileUpload} 
-                isProcessing={isProcessing} 
-              />
-
-              <div className="flex items-center gap-4 py-2">
-                <div className="h-px bg-slate-200 flex-1"></div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
-                <div className="h-px bg-slate-200 flex-1"></div>
-              </div>
-
-              <button
-                onClick={createManualReceipt}
-                className="w-full py-4 rounded-3xl border-2 border-dashed border-slate-300 text-slate-500 font-bold hover:border-indigo-400 hover:text-indigo-600 transition-colors flex items-center justify-center gap-2"
-              >
-                <Plus className="w-5 h-5" />
-                Enter manually
-              </button>
-
-              {error && (
-                <div className="p-4 bg-red-50 border border-red-100 rounded-3xl flex gap-3 text-red-700">
-                  <Info className="w-5 h-5 shrink-0" />
-                  <p className="text-sm font-medium">{error}</p>
+                <div className="relative space-y-6">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-100">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+                    AI Receipt Splitting
+                  </div>
+                  <div className="space-y-3">
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.02]">
+                      Split the bill before the table goes quiet.
+                    </h2>
+                    <p className="text-sm md:text-base text-slate-300 leading-relaxed max-w-md">
+                      Upload a receipt, review the line items, assign people, and save the split to your history.
+                    </p>
+                  </div>
                 </div>
-              )}
+
+                <div className="relative grid grid-cols-2 gap-3 mt-10">
+                  <div className="rounded-2xl bg-white/10 border border-white/10 p-4">
+                    <div className="flex items-center gap-2 text-slate-300 text-xs font-bold uppercase tracking-widest">
+                      <History className="w-4 h-4 text-indigo-300" />
+                      Saved
+                    </div>
+                    <p className="mt-3 text-3xl font-bold">{history.length}</p>
+                    <p className="mt-1 text-xs text-slate-400">receipts</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 border border-white/10 p-4">
+                    <div className="flex items-center gap-2 text-slate-300 text-xs font-bold uppercase tracking-widest">
+                      <Users className="w-4 h-4 text-indigo-300" />
+                      People
+                    </div>
+                    <p className="mt-3 text-3xl font-bold">{people.length}</p>
+                    <p className="mt-1 text-xs text-slate-400">ready to split</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl shadow-sm p-4 md:p-6 flex flex-col">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+                  <div>
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2">
+                      Start a split
+                    </p>
+                    <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
+                      Add your receipt
+                    </h3>
+                    <p className="text-sm text-slate-500 mt-2 max-w-lg">
+                      PDF, JPG, or PNG works. You can adjust names, prices, dates, tax, tip, and shares after import.
+                    </p>
+                  </div>
+                  <div className="flex -space-x-2 shrink-0">
+                    {people.slice(0, 5).map(p => (
+                      <div
+                        key={p.id}
+                        className="w-9 h-9 rounded-full border-2 border-white shadow-sm flex items-center justify-center text-[11px] font-bold text-white"
+                        style={{ backgroundColor: p.color }}
+                        title={p.name}
+                      >
+                        {p.name[0]}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <ReceiptUploader
+                  onUpload={handleFileUpload}
+                  isProcessing={isProcessing}
+                />
+
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:items-center">
+                  <div className="h-px bg-slate-200 hidden md:block" />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                    Or
+                  </span>
+                  <div className="h-px bg-slate-200 hidden md:block" />
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <button
+                    onClick={createManualReceipt}
+                    className="min-h-16 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-bold hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Enter manually
+                  </button>
+                  <button
+                    onClick={() => setCurrentView('history')}
+                    className="min-h-16 rounded-2xl border border-slate-200 bg-white text-slate-700 font-bold hover:border-indigo-200 hover:bg-slate-50 hover:text-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={history.length === 0}
+                  >
+                    <Clock3 className="w-5 h-5" />
+                    Open history
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="mt-5 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 text-red-700">
+                    <Info className="w-5 h-5 shrink-0" />
+                    <p className="text-sm font-medium">{error}</p>
+                  </div>
+                )}
+
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-500">
+                  <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Reads line items
+                  </div>
+                  <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Handles tax and tip
+                  </div>
+                  <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Saves signed-in splits
+                  </div>
+                </div>
+              </div>
             </motion.div>
           ) : (
             <motion.div

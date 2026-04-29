@@ -4,7 +4,7 @@
  */
 
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, Loader2, CheckCircle2 } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle2, ImagePlus } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface ReceiptUploaderProps {
@@ -32,39 +32,51 @@ export default function ReceiptUploader({ onUpload, isProcessing }: ReceiptUploa
       {...getRootProps()} 
       className={cn(
         "relative cursor-pointer group transition-all duration-300",
-        "bg-white border-2 border-dashed rounded-3xl p-12 text-center",
-        isDragActive ? "border-blue-500 bg-blue-50/50 scale-[1.01]" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
+        "bg-slate-50 border-2 border-dashed rounded-3xl px-6 py-10 md:p-10 text-center overflow-hidden",
+        isDragActive ? "border-indigo-500 bg-indigo-50/70 scale-[1.01]" : "border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40",
         isProcessing && "pointer-events-none opacity-80"
       )}
     >
       <input {...getInputProps()} />
+      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-indigo-200 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       
       <div className="flex flex-col items-center gap-4">
         {isProcessing ? (
           <div className="space-y-4 flex flex-col items-center">
             <div className="relative">
-              <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />
+              <Loader2 className="w-16 h-16 text-indigo-600 animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-blue-600" />
+                <FileText className="w-6 h-6 text-indigo-600" />
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-xl font-bold tracking-tight">AI is parsing your receipt...</p>
-              <p className="text-gray-500 text-sm">Extracting items, identifying prices, and categorizing data.</p>
+              <p className="text-xl font-bold tracking-tight text-slate-900">AI is parsing your receipt...</p>
+              <p className="text-slate-500 text-sm">Extracting items, identifying prices, and categorizing data.</p>
             </div>
           </div>
         ) : (
           <>
-            <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-              <Upload className="w-10 h-10 text-gray-400 group-hover:text-blue-500" />
+            <div className="w-20 h-20 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-indigo-200 group-hover:text-indigo-600 transition-colors">
+              {isDragActive ? (
+                <ImagePlus className="w-10 h-10 text-indigo-500" />
+              ) : (
+                <Upload className="w-10 h-10 text-slate-400 group-hover:text-indigo-500" />
+              )}
             </div>
             <div className="space-y-2">
-              <p className="text-xl font-bold tracking-tight">
-                {isDragActive ? "Drop it here!" : "Click or drag receipt"}
+              <p className="text-2xl font-bold tracking-tight text-slate-900">
+                {isDragActive ? "Drop it here" : "Drop receipt here"}
               </p>
-              <p className="text-gray-500 text-sm max-w-[240px] mx-auto leading-relaxed">
-                Upload a PDF, JPG, or PNG of your receipt to begin.
+              <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed">
+                Drag a file into this area, or click anywhere in the panel to choose one.
               </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                {['PDF', 'JPG', 'PNG'].map((type) => (
+                  <span key={type} className="rounded-full bg-white border border-slate-200 px-3 py-1 text-[10px] font-black text-slate-400 tracking-widest">
+                    {type}
+                  </span>
+                ))}
+              </div>
             </div>
           </>
         )}
@@ -72,13 +84,13 @@ export default function ReceiptUploader({ onUpload, isProcessing }: ReceiptUploa
 
       {isProcessing && (
         <div className="mt-8 space-y-3">
-          <div className="h-1.5 w-48 mx-auto bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-600 animate-progress origin-left w-full" />
+          <div className="h-1.5 w-48 mx-auto bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-600 animate-progress origin-left w-full" />
           </div>
-          <div className="flex justify-center gap-4 text-[10px] uppercase font-bold tracking-widest text-gray-400">
+          <div className="flex justify-center gap-4 text-[10px] uppercase font-bold tracking-widest text-slate-400">
              <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-green-500" /> Scanning</span>
              <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-green-500" /> OCR</span>
-             <span className="flex items-center gap-1 text-blue-600">Categorizing</span>
+             <span className="flex items-center gap-1 text-indigo-600">Categorizing</span>
           </div>
         </div>
       )}
