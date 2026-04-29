@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build / output
+dist/
+build/
+*.tsbuildinfo
+
+# Vite
+.vite/
+
+# Environment (keep example committed)
+.env*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Tests
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# Firebase (local emulator & CLI cache)
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+firebase-applet-config.json
+
+# Local AI / agent config
+.claude/
+
+# Python (e.g. trial scripts)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/

@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore { 
+  match /databases/{database}/documents {
+    // Catch-all default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Core helpers
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function checkSize(val, max) { return val.size() <= max; }
+
+    function isValidExtractedData(d) {
+      return d.keys().hasAll(['items', 'subtotal', 'tax', 'tip', 'fees', 'total', 'date', 'currency']) &&
+             d.keys().hasOnly(['items', 'subtotal', 'tax', 'tip', 'fees', 'merchantName', 'total', 'date', 'orderNumber', 'currency']) &&
+             d.items is list && checkSize(d.items, 500) &&
+             d.subtotal is number &&
+             d.tax is number &&
+             d.tip is number &&
+             d.fees is number &&
+             d.total is number &&
+             d.date is string && checkSize(d.date, 50) &&
+             d.currency is string && checkSize(d.currency, 10) &&
+             (d.keys().hasAny(['merchantName']) ? (d.merchantName is string && checkSize(d.merchantName, 100)) : true) &&
+             (d.keys().hasAny(['orderNumber']) ? (d.orderNumber is string && checkSize(d.orderNumber, 50)) : true);
+    }
+
+    function isValidReceipt(data) {
+      return data.keys().hasAll(['userId', 'id', 'timestamp', 'data', 'people']) &&
+             data.keys().hasOnly(['userId', 'id', 'timestamp', 'data', 'people']) &&
+             data.userId == request.auth.uid &&
+             isValidId(data.id) &&
+             data.timestamp is number &&
+             data.data is map && isValidExtractedData(data.data) &&
+             data.people is list && checkSize(data.people, 50);
+    }
+
+    match /receipts/{receiptId} {
+      allow get: if isSignedIn() && isValidId(receiptId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(receiptId) && isValidReceipt(incoming());
+      allow delete: if isSignedIn() && isValidId(receiptId) && existing().userId == request.auth.uid;
+      // We don't support updating existing receipts yet according to the UI (it just deletes and re-creates, or doesn't allow editing saved ones normally)
+      allow update: if false; 
+    }
+
+    // Profile write: Date.now() is stored as int or float — `is number` is not valid in rules.
+    function isValidUpdatedAt(t) {
+      return t is int || t is float;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['displayName', 'updatedAt']) &&
+             data.keys().hasOnly(['displayName', 'updatedAt', 'participants']) &&
+             data.displayName is string &&
+             checkSize(data.displayName, 100) &&
+             data.displayName.size() >= 1 &&
+             isValidUpdatedAt(data.updatedAt) &&
+             (!data.keys().hasAny(['participants']) || (
+               data.participants is list &&
+               data.participants.size() >= 1 &&
+               data.participants.size() <= 30 &&
+               data.participants[0] is map
+             ));
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow create, update: if isSignedIn() &&
+        request.auth.uid == userId &&
+        isValidUserProfile(incoming());
+      allow delete: if false;
+    }
+  }
+}

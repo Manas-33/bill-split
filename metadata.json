@@ -1,0 +1,6 @@
+{
+  "name": "BillSplit",
+  "description": "Automatically extract data from receipts, categorize expenses, and split bills between friends using AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["Vision AI", "Bill Splitting", "Expense Tracking"]
+}

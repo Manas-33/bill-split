@@ -1,0 +1,38 @@
+{
+  "entities": {
+    "receipt": {
+      "title": "Saved Receipt",
+      "description": "A receipt saved by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "id": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "items": { "type": "array" },
+            "subtotal": { "type": "number" },
+            "tax": { "type": "number" },
+            "tip": { "type": "number" },
+            "fees": { "type": "number" },
+            "merchantName": { "type": "string" },
+            "total": { "type": "number" },
+            "date": { "type": "string" },
+            "orderNumber": { "type": "string" },
+            "currency": { "type": "string" }
+          },
+          "required": ["items", "subtotal", "tax", "tip", "fees", "total", "date", "currency"]
+        },
+        "people": { "type": "array" }
+      },
+      "required": ["userId", "id", "timestamp", "data", "people"]
+    }
+  },
+  "firestore": {
+    "receipts/{receiptId}": {
+      "schema": "receipt",
+      "description": "Receipts saved by a user"
+    }
+  }
+}
