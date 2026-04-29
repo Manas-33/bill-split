@@ -25,6 +25,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   Pharmacy: '#06B6D4',
   Kitchen: '#EF4444',
   Entertainment: '#F97316',
+  Transportation: '#14B8A6',
+  Subscriptions: '#0EA5E9',
+  Health: '#F43F5E',
+  Dining: '#EAB308',
   'Tax & Fees': '#64748B',
   Other: '#94A3B8',
 };

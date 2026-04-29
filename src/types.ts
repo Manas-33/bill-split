@@ -48,6 +48,10 @@ export const CATEGORIES = [
   'Pharmacy',
   'Kitchen',
   'Entertainment',
+  'Transportation',
+  'Subscriptions',
+  'Health',
+  'Dining',
   'Other'
 ];
 
