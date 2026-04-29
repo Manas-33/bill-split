@@ -10,6 +10,7 @@ export const ME_AGGREGATE_KEY = '__ME__';
 export interface PersonReceiptDetail {
   merchantName: string;
   date: string;
+  currency: string;
   items: { name: string; sharePrice: number }[];
   sharedFees: number;
   totalForReceipt: number;
@@ -19,6 +20,7 @@ export interface BalanceRow {
   key: string;
   displayName: string;
   total: number;
+  currency: string;
   color: string;
   receiptDetails: PersonReceiptDetail[];
 }
@@ -45,7 +47,7 @@ export function aggregateOwedBalances(
 
   const balances = new Map<
     string,
-    { total: number; color: string; receiptDetails: PersonReceiptDetail[] }
+    { total: number; currency: string; color: string; receiptDetails: PersonReceiptDetail[] }
   >();
 
   history.forEach((entry) => {
@@ -77,6 +79,7 @@ export function aggregateOwedBalances(
       const detail: PersonReceiptDetail = {
         merchantName: merchant,
         date: entry.data.date || new Date(entry.timestamp).toLocaleDateString(),
+        currency: entry.data.currency || 'USD',
         items: myItems,
         sharedFees: combinedSharedFees,
         totalForReceipt: personTotal,
@@ -87,7 +90,12 @@ export function aggregateOwedBalances(
         b.total += personTotal;
         b.receiptDetails.push(detail);
       } else {
-        balances.set(nameKey, { total: personTotal, color: person.color, receiptDetails: [detail] });
+        balances.set(nameKey, {
+          total: personTotal,
+          currency: detail.currency,
+          color: person.color,
+          receiptDetails: [detail],
+        });
       }
     });
   });

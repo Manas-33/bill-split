@@ -13,6 +13,13 @@ export interface ExpenseReceiptEntry {
   monthLabel: string;
   total: number;
   currency: string;
+  items: {
+    name: string;
+    category: string;
+    quantity: number;
+    fullPrice: number;
+    sharePrice: number;
+  }[];
   categoryBreakdown: { category: string; amount: number }[];
 }
 
@@ -86,6 +93,7 @@ export function aggregateMyExpenses(
     const sharedFees = taxShare + tipShare + feesShare;
 
     const perCategory = new Map<string, number>();
+    const items: ExpenseReceiptEntry['items'] = [];
     let myItemsTotal = 0;
 
     entry.data.items.forEach((item) => {
@@ -95,6 +103,13 @@ export function aggregateMyExpenses(
       myItemsTotal += share;
       const cat = item.category || 'Other';
       perCategory.set(cat, (perCategory.get(cat) || 0) + share);
+      items.push({
+        name: item.name,
+        category: cat,
+        quantity: item.quantity,
+        fullPrice: item.price,
+        sharePrice: share,
+      });
     });
 
     if (sharedFees > 0) {
@@ -134,6 +149,7 @@ export function aggregateMyExpenses(
       monthLabel: mLabel,
       total: myTotal,
       currency: entry.data.currency || 'USD',
+      items,
       categoryBreakdown: Array.from(perCategory.entries())
         .map(([category, amount]) => ({ category, amount }))
         .sort((a, b) => b.amount - a.amount),

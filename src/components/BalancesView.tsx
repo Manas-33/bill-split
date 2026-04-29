@@ -7,7 +7,8 @@ import { useState, useMemo } from 'react';
 import { SavedReceipt } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { aggregateOwedBalances } from '../lib/owedBalances';
-import { Wallet, Users, ChevronDown, ChevronUp, Receipt } from 'lucide-react';
+import { exportBalancePdf, exportBalanceXlsx } from '../lib/exportExpenses';
+import { Wallet, Users, ChevronDown, ChevronUp, Receipt, FileDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface BalancesViewProps {
@@ -79,7 +80,29 @@ export default function BalancesView({ history, myDisplayName }: BalancesViewPro
                   </div>
                 </div>
                 <div className="text-right flex items-center gap-4">
-                  <div className="text-xl font-bold text-indigo-600">{formatCurrency(person.total)}</div>
+                  <div className="text-xl font-bold text-indigo-600">{formatCurrency(person.total, person.currency)}</div>
+                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        exportBalanceXlsx(person);
+                      }}
+                      className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[10px] font-black uppercase tracking-wider text-slate-600 shadow-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                    >
+                      <FileDown className="w-3.5 h-3.5" /> Excel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        exportBalancePdf(person);
+                      }}
+                      className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[10px] font-black uppercase tracking-wider text-slate-600 shadow-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                    >
+                      <FileDown className="w-3.5 h-3.5" /> PDF
+                    </button>
+                  </div>
                   {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
                 </div>
               </div>
@@ -107,18 +130,18 @@ export default function BalancesView({ history, myDisplayName }: BalancesViewPro
                             {rd.items.map((item, i) => (
                               <div key={i} className="flex justify-between text-slate-600 font-medium text-xs">
                                 <span>{item.name}</span>
-                                <span>{formatCurrency(item.sharePrice)}</span>
+                                <span>{formatCurrency(item.sharePrice, rd.currency)}</span>
                               </div>
                             ))}
                             {rd.sharedFees > 0 && (
                               <div className="flex justify-between text-slate-500 font-medium text-xs pt-2 mt-2 border-t border-slate-200/60 border-dashed">
                                 <span>Shared Fees & Tax</span>
-                                <span>{formatCurrency(rd.sharedFees)}</span>
+                                <span>{formatCurrency(rd.sharedFees, rd.currency)}</span>
                               </div>
                             )}
                             <div className="flex justify-between text-slate-900 font-bold text-sm pt-2 mt-2 border-t border-slate-200">
                               <span>Total</span>
-                              <span className="text-indigo-600">{formatCurrency(rd.totalForReceipt)}</span>
+                              <span className="text-indigo-600">{formatCurrency(rd.totalForReceipt, rd.currency)}</span>
                             </div>
                           </div>
                         </div>
@@ -150,7 +173,29 @@ export default function BalancesView({ history, myDisplayName }: BalancesViewPro
                     </div>
                  </div>
                  <div className="flex items-center gap-4">
-                   <div className="text-lg font-bold text-slate-500">{formatCurrency(youBalance.total)}</div>
+                   <div className="text-lg font-bold text-slate-500">{formatCurrency(youBalance.total, youBalance.currency)}</div>
+                   <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                     <button
+                       type="button"
+                       onClick={(event) => {
+                         event.stopPropagation();
+                         exportBalanceXlsx(youBalance);
+                       }}
+                       className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[10px] font-black uppercase tracking-wider text-slate-600 shadow-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                     >
+                       <FileDown className="w-3.5 h-3.5" /> Excel
+                     </button>
+                     <button
+                       type="button"
+                       onClick={(event) => {
+                         event.stopPropagation();
+                         exportBalancePdf(youBalance);
+                       }}
+                       className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[10px] font-black uppercase tracking-wider text-slate-600 shadow-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                     >
+                       <FileDown className="w-3.5 h-3.5" /> PDF
+                     </button>
+                   </div>
                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
                  </div>
                </div>
@@ -178,18 +223,18 @@ export default function BalancesView({ history, myDisplayName }: BalancesViewPro
                             {rd.items.map((item, i) => (
                               <div key={i} className="flex justify-between text-slate-600 font-medium text-xs">
                                 <span>{item.name}</span>
-                                <span>{formatCurrency(item.sharePrice)}</span>
+                                <span>{formatCurrency(item.sharePrice, rd.currency)}</span>
                               </div>
                             ))}
                             {rd.sharedFees > 0 && (
                               <div className="flex justify-between text-slate-500 font-medium text-xs pt-2 mt-2 border-t border-slate-200/60 border-dashed">
                                 <span>Shared Fees & Tax</span>
-                                <span>{formatCurrency(rd.sharedFees)}</span>
+                                <span>{formatCurrency(rd.sharedFees, rd.currency)}</span>
                               </div>
                             )}
                             <div className="flex justify-between text-slate-900 font-bold text-sm pt-2 mt-2 border-t border-slate-200">
                               <span>Total</span>
-                              <span className="text-indigo-600">{formatCurrency(rd.totalForReceipt)}</span>
+                              <span className="text-indigo-600">{formatCurrency(rd.totalForReceipt, rd.currency)}</span>
                             </div>
                           </div>
                         </div>

@@ -5,10 +5,11 @@
 
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { TrendingUp, Calendar, PieChart, Receipt, ChevronDown, ChevronUp, Wallet } from 'lucide-react';
+import { TrendingUp, Calendar, PieChart, Receipt, ChevronDown, ChevronUp, Wallet, FileDown } from 'lucide-react';
 import { SavedReceipt } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { aggregateMyExpenses } from '../lib/myExpenses';
+import { exportExpensesPdf, exportExpensesXlsx } from '../lib/exportExpenses';
 
 interface ExpensesViewProps {
   history: SavedReceipt[];
@@ -57,14 +58,20 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
     const byCategory = Array.from(catMap.entries())
       .map(([category, amount]) => ({ category, amount }))
       .sort((a, b) => b.amount - a.amount);
+    const month = result.byMonth.find((m) => m.monthKey === monthFilter);
     return {
       ...result,
       entries,
       grandTotal: total,
       receiptCount: entries.length,
       byCategory,
+      byMonth: month ? [{ ...month, amount: total }] : [],
     };
   }, [result, monthFilter]);
+
+  const exportTitle = monthFilter
+    ? `expenses-${filtered.entries[0]?.monthLabel ?? monthFilter}`
+    : 'all-expenses';
 
   if (history.length === 0 || result.receiptCount === 0) {
     return (
@@ -95,17 +102,35 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
             {monthFilter ? `Your spending — ${filtered.entries[0]?.monthLabel ?? ''}` : 'Your total spending'}
           </p>
           <h2 className="text-5xl font-black">{formatCurrency(filtered.grandTotal, filtered.currency)}</h2>
-          <p className="text-indigo-200 mt-2 font-medium">
-            Across {filtered.receiptCount} receipt{filtered.receiptCount === 1 ? '' : 's'}
-            {monthFilter && (
+          <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-indigo-200 font-medium">
+              Across {filtered.receiptCount} receipt{filtered.receiptCount === 1 ? '' : 's'}
+              {monthFilter && (
+                <button
+                  onClick={() => setMonthFilter(null)}
+                  className="ml-3 underline hover:no-underline font-bold"
+                >
+                  Clear filter
+                </button>
+              )}
+            </p>
+            <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setMonthFilter(null)}
-                className="ml-3 underline hover:no-underline font-bold"
+                type="button"
+                onClick={() => exportExpensesXlsx(filtered, exportTitle)}
+                className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white ring-1 ring-white/20 transition-colors hover:bg-white/25"
               >
-                Clear filter
+                <FileDown className="w-4 h-4" /> Excel
               </button>
-            )}
-          </p>
+              <button
+                type="button"
+                onClick={() => exportExpensesPdf(filtered, exportTitle)}
+                className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white ring-1 ring-white/20 transition-colors hover:bg-white/25"
+              >
+                <FileDown className="w-4 h-4" /> PDF
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -246,24 +271,65 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
                       exit={{ height: 0, opacity: 0 }}
                       className="border-t border-slate-200 bg-white"
                     >
-                      <div className="p-4 space-y-2">
-                        {e.categoryBreakdown.map((c) => (
-                          <div
-                            key={c.category}
-                            className="flex justify-between items-center text-sm"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="w-2 h-2 rounded-full"
-                                style={{ backgroundColor: colorFor(c.category) }}
-                              />
-                              <span className="text-slate-700 font-medium">{c.category}</span>
+                      <div className="p-4 space-y-5">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            By Category
+                          </p>
+                          {e.categoryBreakdown.map((c) => (
+                            <div
+                              key={c.category}
+                              className="flex justify-between items-center text-sm"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: colorFor(c.category) }}
+                                />
+                                <span className="text-slate-700 font-medium">{c.category}</span>
+                              </div>
+                              <span className="text-slate-900 font-bold">
+                                {formatCurrency(c.amount, e.currency)}
+                              </span>
                             </div>
-                            <span className="text-slate-900 font-bold">
-                              {formatCurrency(c.amount, e.currency)}
-                            </span>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+
+                        <div className="space-y-2 border-t border-slate-100 pt-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Items Purchased
+                          </p>
+                          {e.items.length > 0 ? (
+                            e.items.map((item, index) => (
+                              <div
+                                key={`${item.name}-${index}`}
+                                className="flex items-start justify-between gap-4 rounded-xl bg-slate-50 p-3 text-sm"
+                              >
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-800 truncate">{item.name}</p>
+                                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                    {item.category}
+                                    {item.quantity !== 1 ? ` · Qty ${item.quantity}` : ''}
+                                  </p>
+                                </div>
+                                <div className="shrink-0 text-right">
+                                  <p className="font-bold text-indigo-600">
+                                    {formatCurrency(item.sharePrice, e.currency)}
+                                  </p>
+                                  {Math.abs(item.fullPrice - item.sharePrice) > 0.01 && (
+                                    <p className="text-[10px] font-medium text-slate-400">
+                                      of {formatCurrency(item.fullPrice, e.currency)}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm font-medium italic text-slate-400">
+                              No item-level expenses for this receipt.
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   )}
