@@ -87,7 +87,6 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
     );
   }
 
-  const maxCategory = filtered.byCategory[0]?.amount || 1;
   const maxMonth = result.byMonth.reduce((m, x) => Math.max(m, x.amount), 1);
 
   return (
@@ -135,90 +134,20 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* By month */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-indigo-500" /> By Month
-          </h3>
-          <p className="text-xs text-slate-400 font-medium mb-5 italic">Click a month to filter below</p>
-          <div className="space-y-3">
-            {result.byMonth.map((m) => {
-              const pct = (m.amount / maxMonth) * 100;
-              const active = monthFilter === m.monthKey;
-              return (
-                <button
-                  key={m.monthKey}
-                  onClick={() => setMonthFilter(active ? null : m.monthKey)}
-                  className={`w-full text-left rounded-2xl p-3 border transition-all ${
-                    active
-                      ? 'bg-indigo-50 border-indigo-200'
-                      : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-sm font-bold ${active ? 'text-indigo-700' : 'text-slate-800'}`}>
-                      {m.monthLabel}
-                    </span>
-                    <span className={`text-sm font-bold ${active ? 'text-indigo-700' : 'text-slate-900'}`}>
-                      {formatCurrency(m.amount, result.currency)}
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-indigo-500 transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <MonthBarChart
+          months={result.byMonth}
+          maxMonth={maxMonth}
+          currency={result.currency}
+          activeMonthKey={monthFilter}
+          onSelect={(key) => setMonthFilter(key)}
+        />
 
-        {/* By category */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
-            <PieChart className="w-5 h-5 text-indigo-500" /> By Category
-          </h3>
-          <p className="text-xs text-slate-400 font-medium mb-5 italic">
-            {monthFilter ? 'For selected month' : 'All time'}
-          </p>
-          <div className="space-y-3">
-            {filtered.byCategory.length === 0 ? (
-              <p className="text-sm text-slate-400 italic">No categorized spending.</p>
-            ) : (
-              filtered.byCategory.map((c) => {
-                const pct = (c.amount / maxCategory) * 100;
-                const totalPct = filtered.grandTotal > 0 ? (c.amount / filtered.grandTotal) * 100 : 0;
-                return (
-                  <div key={c.category} className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: colorFor(c.category) }}
-                        />
-                        <span className="text-sm font-bold text-slate-800">{c.category}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          {totalPct.toFixed(0)}%
-                        </span>
-                      </div>
-                      <span className="text-sm font-bold text-slate-900">
-                        {formatCurrency(c.amount, result.currency)}
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full transition-all"
-                        style={{ width: `${pct}%`, backgroundColor: colorFor(c.category) }}
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
+        <CategoryDonutChart
+          categories={filtered.byCategory}
+          grandTotal={filtered.grandTotal}
+          currency={filtered.currency}
+          subtitle={monthFilter ? 'For selected month' : 'All time'}
+        />
       </div>
 
       {/* Receipts list */}
@@ -341,4 +270,264 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
       </div>
     </div>
   );
+}
+
+interface MonthBarChartProps {
+  months: { monthKey: string; monthLabel: string; amount: number }[];
+  maxMonth: number;
+  currency: string;
+  activeMonthKey: string | null;
+  onSelect: (monthKey: string | null) => void;
+}
+
+function MonthBarChart({ months, maxMonth, currency, activeMonthKey, onSelect }: MonthBarChartProps) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const visible = hovered ?? activeMonthKey ?? months[months.length - 1]?.monthKey ?? null;
+  const visibleMonth = months.find((m) => m.monthKey === visible) ?? months[months.length - 1];
+  const niceMax = niceCeil(maxMonth);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+      <div className="flex items-start justify-between mb-1">
+        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-indigo-500" /> By Month
+        </h3>
+        {visibleMonth && (
+          <div className="text-right">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              {visibleMonth.monthLabel}
+            </p>
+            <p className="text-base font-bold text-slate-900">
+              {formatCurrency(visibleMonth.amount, currency)}
+            </p>
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-slate-400 font-medium mb-5 italic">Click a month to filter below</p>
+
+      {months.length === 0 ? (
+        <p className="text-sm text-slate-400 italic">No monthly data.</p>
+      ) : (
+        <div className="relative pl-10 pr-1">
+          <div className="absolute left-0 top-0 bottom-7 flex flex-col justify-between text-[10px] font-bold text-slate-400 tabular-nums">
+            <span>{formatCompactCurrency(niceMax, currency)}</span>
+            <span>{formatCompactCurrency(niceMax / 2, currency)}</span>
+            <span>{formatCompactCurrency(0, currency)}</span>
+          </div>
+
+          <div className="relative h-44">
+            <div className="absolute inset-x-0 top-0 border-t border-dashed border-slate-200" />
+            <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-slate-200" />
+            <div className="absolute inset-x-0 bottom-0 border-t border-slate-200" />
+
+            <div className="relative h-full flex items-end gap-1.5">
+              {months.map((m) => {
+                const pct = niceMax > 0 ? (m.amount / niceMax) * 100 : 0;
+                const isActive = activeMonthKey === m.monthKey;
+                const isHovered = hovered === m.monthKey;
+                return (
+                  <button
+                    key={m.monthKey}
+                    type="button"
+                    onClick={() => onSelect(isActive ? null : m.monthKey)}
+                    onMouseEnter={() => setHovered(m.monthKey)}
+                    onMouseLeave={() => setHovered(null)}
+                    className="group relative flex-1 h-full flex flex-col justify-end min-w-0"
+                    aria-label={`${m.monthLabel}: ${formatCurrency(m.amount, currency)}`}
+                  >
+                    <div
+                      className={`w-full rounded-t-md transition-all duration-200 ${
+                        isActive
+                          ? 'bg-gradient-to-t from-indigo-700 to-indigo-500 shadow-md shadow-indigo-200'
+                          : isHovered
+                          ? 'bg-gradient-to-t from-indigo-600 to-indigo-400'
+                          : 'bg-gradient-to-t from-indigo-400/80 to-indigo-300/70 group-hover:from-indigo-500 group-hover:to-indigo-400'
+                      }`}
+                      style={{ height: `${Math.max(pct, m.amount > 0 ? 2 : 0)}%` }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex gap-1.5 mt-2 pl-0">
+            {months.map((m) => {
+              const isActive = activeMonthKey === m.monthKey;
+              const short = m.monthLabel.split(' ')[0]?.slice(0, 3) ?? m.monthLabel;
+              return (
+                <div
+                  key={`${m.monthKey}-label`}
+                  className={`flex-1 text-center text-[10px] font-bold uppercase tracking-wider truncate ${
+                    isActive ? 'text-indigo-600' : 'text-slate-400'
+                  }`}
+                >
+                  {short}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CategoryDonutChartProps {
+  categories: { category: string; amount: number }[];
+  grandTotal: number;
+  currency: string;
+  subtitle: string;
+}
+
+function CategoryDonutChart({ categories, grandTotal, currency, subtitle }: CategoryDonutChartProps) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const total = categories.reduce((s, c) => s + c.amount, 0) || grandTotal;
+
+  const size = 168;
+  const stroke = 26;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  let offset = 0;
+  const segments = categories.map((c) => {
+    const fraction = total > 0 ? c.amount / total : 0;
+    const dash = fraction * circumference;
+    const seg = { category: c.category, amount: c.amount, fraction, dash, offset };
+    offset += dash;
+    return seg;
+  });
+
+  const focused = hovered
+    ? categories.find((c) => c.category === hovered)
+    : null;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+      <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+        <PieChart className="w-5 h-5 text-indigo-500" /> By Category
+      </h3>
+      <p className="text-xs text-slate-400 font-medium mb-5 italic">{subtitle}</p>
+
+      {categories.length === 0 ? (
+        <p className="text-sm text-slate-400 italic">No categorized spending.</p>
+      ) : (
+        <div className="flex flex-col sm:flex-row items-center gap-5">
+          <div className="relative shrink-0" style={{ width: size, height: size }}>
+            <svg width={size} height={size} className="-rotate-90">
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                stroke="#F1F5F9"
+                strokeWidth={stroke}
+              />
+              {segments.map((seg) => {
+                const isHovered = hovered === seg.category;
+                const isDimmed = hovered !== null && !isHovered;
+                return (
+                  <circle
+                    key={seg.category}
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    fill="none"
+                    stroke={colorFor(seg.category)}
+                    strokeWidth={isHovered ? stroke + 4 : stroke}
+                    strokeDasharray={`${seg.dash} ${circumference - seg.dash}`}
+                    strokeDashoffset={-seg.offset}
+                    strokeLinecap="butt"
+                    className="transition-all duration-200"
+                    style={{ opacity: isDimmed ? 0.35 : 1 }}
+                    onMouseEnter={() => setHovered(seg.category)}
+                    onMouseLeave={() => setHovered(null)}
+                  />
+                );
+              })}
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-3">
+              {focused ? (
+                <>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 truncate max-w-full">
+                    {focused.category}
+                  </p>
+                  <p className="text-lg font-black text-slate-900 tabular-nums">
+                    {formatCurrency(focused.amount, currency)}
+                  </p>
+                  <p className="text-[10px] font-bold text-slate-400">
+                    {((focused.amount / total) * 100).toFixed(1)}%
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                    Total
+                  </p>
+                  <p className="text-lg font-black text-slate-900 tabular-nums">
+                    {formatCurrency(grandTotal, currency)}
+                  </p>
+                  <p className="text-[10px] font-bold text-slate-400">
+                    {categories.length} categor{categories.length === 1 ? 'y' : 'ies'}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 w-full min-w-0 space-y-1.5 max-h-44 overflow-y-auto pr-1">
+            {categories.map((c) => {
+              const pct = total > 0 ? (c.amount / total) * 100 : 0;
+              const isHovered = hovered === c.category;
+              return (
+                <button
+                  key={c.category}
+                  type="button"
+                  onMouseEnter={() => setHovered(c.category)}
+                  onMouseLeave={() => setHovered(null)}
+                  className={`w-full flex items-center justify-between gap-3 rounded-xl px-2.5 py-1.5 transition-colors ${
+                    isHovered ? 'bg-slate-100' : 'hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: colorFor(c.category) }}
+                    />
+                    <span className="text-xs font-bold text-slate-800 truncate">{c.category}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 tabular-nums">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider w-9 text-right">
+                      {pct.toFixed(0)}%
+                    </span>
+                    <span className="text-xs font-bold text-slate-900 w-16 text-right">
+                      {formatCurrency(c.amount, currency)}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function niceCeil(value: number): number {
+  if (value <= 0) return 1;
+  const exp = Math.floor(Math.log10(value));
+  const base = Math.pow(10, exp);
+  const n = value / base;
+  const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+  return nice * base;
+}
+
+function formatCompactCurrency(value: number, currency: string): string {
+  if (value >= 1000) {
+    const k = value / 1000;
+    const symbol = formatCurrency(0, currency).replace(/[\d.,\s]/g, '') || '$';
+    return `${symbol}${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}k`;
+  }
+  return formatCurrency(value, currency);
 }
