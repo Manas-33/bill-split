@@ -43,8 +43,11 @@ service cloud.firestore {
       allow list: if isSignedIn() && existing().userId == request.auth.uid;
       allow create: if isSignedIn() && isValidId(receiptId) && isValidReceipt(incoming());
       allow delete: if isSignedIn() && isValidId(receiptId) && existing().userId == request.auth.uid;
-      // We don't support updating existing receipts yet according to the UI (it just deletes and re-creates, or doesn't allow editing saved ones normally)
-      allow update: if false; 
+      allow update: if isSignedIn() &&
+        isValidId(receiptId) &&
+        existing().userId == request.auth.uid &&
+        isValidReceipt(incoming()) &&
+        incoming().id == receiptId;
     }
 
     // Profile write: Date.now() is stored as int or float — `is number` is not valid in rules.

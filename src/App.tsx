@@ -74,6 +74,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsNameDraft, setSettingsNameDraft] = useState('');
   const [profileReady, setProfileReady] = useState(false);
+  const [editingReceiptId, setEditingReceiptId] = useState<string | null>(null);
+  const [editingReceiptTimestamp, setEditingReceiptTimestamp] = useState<number | null>(null);
 
   const myDisplayName =
     people.find((p) => p.id === PRIMARY_PARTICIPANT_ID)?.name?.trim() || DEFAULT_MY_DISPLAY_NAME;
@@ -192,9 +194,9 @@ export default function App() {
     const q = query(collection(db, 'receipts'), where('userId', '==', user.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const userReceipts = snapshot.docs
-        .map(doc => doc.data() as any)
+        .map((receiptDoc) => ({ docId: receiptDoc.id, ...(receiptDoc.data() as any) }))
         .map(data => ({
-          id: data.id,
+          id: data.docId,
           data: data.data,
           people: data.people,
           timestamp: data.timestamp
@@ -226,6 +228,8 @@ export default function App() {
   const handleFileUpload = useCallback(async (file: File) => {
     setIsProcessing(true);
     setError(null);
+    setEditingReceiptId(null);
+    setEditingReceiptTimestamp(null);
     try {
       const data = await processReceipt(file);
       setReceipt(data);
@@ -241,13 +245,14 @@ export default function App() {
       if (!user) setError("You must be signed in to save receipts.");
       return;
     }
-    const receiptId = crypto.randomUUID();
+    const receiptId = editingReceiptId ?? crypto.randomUUID();
+    const isUpdate = Boolean(editingReceiptId);
     const newEntry = {
       userId: user.uid,
       id: receiptId,
       data: receipt,
       people: people,
-      timestamp: Date.now()
+      timestamp: editingReceiptTimestamp ?? Date.now()
     };
     
     try {
@@ -255,7 +260,11 @@ export default function App() {
       reset();
       setCurrentView('history');
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, `receipts/${receiptId}`);
+      handleFirestoreError(
+        error,
+        isUpdate ? OperationType.UPDATE : OperationType.CREATE,
+        `receipts/${receiptId}`
+      );
     }
   };
 
@@ -269,12 +278,17 @@ export default function App() {
       })),
     };
     setReceipt(data);
+    setEditingReceiptId(entry.id);
+    setEditingReceiptTimestamp(entry.timestamp);
     setCurrentView('main');
   };
 
   const deleteFromHistory = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'receipts', id));
+      if (editingReceiptId === id) {
+        reset();
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `receipts/${id}`);
     }
@@ -347,6 +361,8 @@ export default function App() {
       currency: 'USD'
     };
     setReceipt(newReceipt);
+    setEditingReceiptId(null);
+    setEditingReceiptTimestamp(null);
   };
 
   const updateItemName = (itemId: string, newName: string) => {
@@ -432,6 +448,8 @@ export default function App() {
   const reset = () => {
     setReceipt(null);
     setError(null);
+    setEditingReceiptId(null);
+    setEditingReceiptTimestamp(null);
   };
 
   const performGoHome = () => {
@@ -550,7 +568,7 @@ export default function App() {
               onClick={saveToHistory}
               className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-100 whitespace-nowrap text-sm"
             >
-              Save
+              {editingReceiptId ? 'Update' : 'Save'}
             </button>
           )}
         </div>
@@ -951,5 +969,3 @@ export default function App() {
     </div>
   );
 }
-
-
