@@ -38,29 +38,29 @@ export default function ReceiptView({
     <div className="overflow-x-auto custom-scrollbar">
       <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="bg-slate-50/50 border-b border-slate-100">
-            <th className="py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Item Details</th>
-            <th className="py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">Qty</th>
-            <th className="py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Price</th>
-            <th className="py-5 px-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Split With</th>
-            <th className="py-5 px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400"></th>
+          <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
+            <th className="py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Item Details</th>
+            <th className="py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 text-center">Qty</th>
+            <th className="py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 text-right">Price</th>
+            <th className="py-5 px-5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Split With</th>
+            <th className="py-5 px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-50">
+        <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
           {receipt.items.map((item) => (
-            <tr key={item.id} className="hover:bg-slate-50/80 group transition-colors">
+            <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 group transition-colors">
               <td className="py-4 px-6">
                 <div className="flex flex-col gap-1">
                   <input
                     type="text"
                     value={item.name}
                     onChange={(e) => onUpdateItemName(item.id, e.target.value)}
-                    className="font-bold text-sm text-slate-800 bg-transparent outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1 -mx-1"
+                    className="font-bold text-sm text-slate-800 dark:text-slate-100 bg-transparent outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1 -mx-1"
                     placeholder="Item name"
                   />
                   <div className="flex items-center gap-2">
                     <label
-                      className="group/cat relative inline-flex items-center gap-1.5 pl-2 pr-1.5 py-0.5 rounded-full bg-slate-100 text-[9px] font-bold text-slate-500 uppercase tracking-tight cursor-pointer hover:bg-slate-200 transition-colors focus-within:ring-2 focus-within:ring-indigo-400"
+                      className="group/cat relative inline-flex items-center gap-1.5 pl-2 pr-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus-within:ring-2 focus-within:ring-indigo-400"
                       aria-label={`Category for ${item.name || 'item'}`}
                     >
                       <Tag className="w-2.5 h-2.5" />
@@ -86,13 +86,13 @@ export default function ReceiptView({
               </td>
               <td className="py-4 px-6 text-center">
                 <div
-                  className="mx-auto inline-flex max-w-[9.5rem] items-stretch overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm"
+                  className="mx-auto inline-flex max-w-[9.5rem] items-stretch overflow-hidden rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 shadow-sm"
                   role="group"
                   aria-label={`Quantity for ${item.name || 'item'}`}
                 >
                   <button
                     type="button"
-                    className="flex w-9 shrink-0 items-center justify-center border-r border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 active:bg-slate-200 disabled:pointer-events-none disabled:opacity-35"
+                    className="flex w-9 shrink-0 items-center justify-center border-r border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 disabled:pointer-events-none disabled:opacity-35"
                     disabled={item.quantity <= 0.01 + 1e-9}
                     onClick={() => {
                       const next = Math.max(0.01, +(item.quantity - 1).toFixed(4));
@@ -111,12 +111,12 @@ export default function ReceiptView({
                       const v = parseFloat(e.target.value);
                       onUpdateQuantity(item.id, Number.isFinite(v) ? v : item.quantity);
                     }}
-                    className="min-w-[2.75rem] max-w-[4rem] flex-1 border-0 bg-transparent py-2 text-center text-sm font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="min-w-[2.75rem] max-w-[4rem] flex-1 border-0 bg-transparent py-2 text-center text-sm font-mono font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     aria-label="Quantity value"
                   />
                   <button
                     type="button"
-                    className="flex w-9 shrink-0 items-center justify-center border-l border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                    className="flex w-9 shrink-0 items-center justify-center border-l border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600"
                     onClick={() => {
                       const next = +(item.quantity + 1).toFixed(4);
                       onUpdateQuantity(item.id, next);
@@ -128,8 +128,8 @@ export default function ReceiptView({
                 </div>
               </td>
               <td className="py-4 px-6 text-right">
-                <div className="flex justify-end items-center gap-1 text-slate-900 font-black">
-                  <span className="text-slate-400">$</span>
+                <div className="flex justify-end items-center gap-1 text-slate-900 dark:text-slate-100 font-black">
+                  <span className="text-slate-400 dark:text-slate-500">$</span>
                   <input
                     type="number"
                     step="0.01"
@@ -150,7 +150,7 @@ export default function ReceiptView({
                         <button
                           key={person.id}
                           onClick={() => onAddShare(item.id, person.id)}
-                          className="h-8 px-2.5 rounded-xl flex items-center gap-1.5 justify-center text-[10px] font-black transition-all whitespace-nowrap bg-slate-100 text-slate-400 hover:text-slate-600 hover:bg-slate-200"
+                          className="h-8 px-2.5 rounded-xl flex items-center gap-1.5 justify-center text-[10px] font-black transition-all whitespace-nowrap bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                           title={`Add ${person.name}`}
                         >
                           <User className="w-3.5 h-3.5" />
@@ -162,7 +162,7 @@ export default function ReceiptView({
                     return (
                       <div 
                         key={person.id} 
-                        className="flex items-center rounded-xl text-white shadow-lg font-bold text-xs ring-2 ring-offset-2 overflow-hidden"
+                        className="flex items-center rounded-xl text-white shadow-lg font-bold text-xs ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 overflow-hidden"
                         style={{ 
                           backgroundColor: person.color,
                           borderColor: person.color,
@@ -196,7 +196,7 @@ export default function ReceiptView({
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     onClick={() => onDeleteItem(item.id)} 
-                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                    className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
                     title="Remove Item"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -206,11 +206,11 @@ export default function ReceiptView({
             </tr>
           ))}
           
-          <tr className="bg-slate-50/20">
+          <tr className="bg-slate-50/20 dark:bg-slate-800/30">
             <td colSpan={5} className="py-3 px-6 text-center">
               <button 
                 onClick={onAddItem}
-                className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 px-4 py-2 rounded-xl transition-colors"
               >
                 <Plus className="w-4 h-4" /> Add Item
               </button>
@@ -218,13 +218,13 @@ export default function ReceiptView({
           </tr>
 
           {/* Subtotal & Taxes Rows */}
-          <tr className="bg-slate-50/40">
-            <td colSpan={2} className="py-4 px-6 text-right text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center justify-end"><span className="leading-8">Subtotal</span></td>
-            <td className="py-4 px-6 text-right text-sm font-black text-slate-900">{formatCurrency(receipt.subtotal, receipt.currency)}</td>
+          <tr className="bg-slate-50/40 dark:bg-slate-800/40">
+            <td colSpan={2} className="py-4 px-6 text-right text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center justify-end"><span className="leading-8">Subtotal</span></td>
+            <td className="py-4 px-6 text-right text-sm font-black text-slate-900 dark:text-slate-100">{formatCurrency(receipt.subtotal, receipt.currency)}</td>
             <td colSpan={2}></td>
           </tr>
-          <tr className="bg-slate-50/40">
-            <td colSpan={2} className="py-2 px-6 text-right text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center justify-end"><span className="leading-8">Tax</span></td>
+          <tr className="bg-slate-50/40 dark:bg-slate-800/40">
+            <td colSpan={2} className="py-2 px-6 text-right text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center justify-end"><span className="leading-8">Tax</span></td>
             <td className="py-2 px-6 text-right text-sm font-black text-indigo-600">
                <div className="flex justify-end items-center gap-1">
                   <span className="text-indigo-300">$</span>
@@ -239,8 +239,8 @@ export default function ReceiptView({
             </td>
             <td colSpan={2}></td>
           </tr>
-          <tr className="bg-slate-50/40">
-            <td colSpan={2} className="py-2 px-6 text-right text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center justify-end"><span className="leading-8">Tip</span></td>
+          <tr className="bg-slate-50/40 dark:bg-slate-800/40">
+            <td colSpan={2} className="py-2 px-6 text-right text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center justify-end"><span className="leading-8">Tip</span></td>
             <td className="py-2 px-6 text-right text-sm font-black text-emerald-600">
                <div className="flex justify-end items-center gap-1">
                   <span className="text-emerald-300">$</span>
@@ -255,8 +255,8 @@ export default function ReceiptView({
             </td>
             <td colSpan={2}></td>
           </tr>
-          <tr className="bg-slate-50/40">
-            <td colSpan={2} className="py-2 px-6 text-right text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center justify-end"><span className="leading-8">Fees</span></td>
+          <tr className="bg-slate-50/40 dark:bg-slate-800/40">
+            <td colSpan={2} className="py-2 px-6 text-right text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center justify-end"><span className="leading-8">Fees</span></td>
             <td className="py-2 px-6 text-right text-sm font-black text-rose-600">
                <div className="flex justify-end items-center gap-1">
                   <span className="text-rose-300">$</span>
@@ -271,7 +271,7 @@ export default function ReceiptView({
             </td>
             <td colSpan={2}></td>
           </tr>
-          <tr className="bg-slate-900 text-white">
+          <tr className="bg-slate-900 dark:bg-slate-950 text-white">
             <td colSpan={2} className="py-4 px-6 text-right text-xs font-bold uppercase tracking-widest"><span className="leading-6 inline-block">Grand Total</span></td>
             <td className="py-4 px-6 text-right text-lg font-black">{formatCurrency(receipt.total, receipt.currency)}</td>
             <td colSpan={2}></td>

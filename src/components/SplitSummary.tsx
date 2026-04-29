@@ -62,7 +62,7 @@ export default function SplitSummary({ receipt, people }: SplitSummaryProps) {
   return (
     <div className="space-y-6">
       {/* Visual Splits Card */}
-      <section className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl">
+      <section className="bg-slate-900 dark:bg-slate-950 rounded-3xl p-6 text-white shadow-xl ring-1 ring-white/5">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-bold">Split Overview</h3>
           <span className="px-3 py-1 bg-green-500 text-[10px] font-black rounded-full text-white uppercase tracking-widest">
@@ -128,18 +128,18 @@ export default function SplitSummary({ receipt, people }: SplitSummaryProps) {
       </section>
 
       {/* Category Card */}
-      <section className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Expenses by Category</h3>
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
+        <h3 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Expenses by Category</h3>
         <div className="space-y-4">
           {categorySummary.slice(0, 3).map((cat) => (
             <div key={cat.name}>
-              <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-700">
+              <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-700 dark:text-slate-300">
                 <span>{cat.name}</span>
                 <span>{formatCurrency(cat.total, receipt.currency)}</span>
               </div>
-              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                 <div 
-                  className="bg-slate-900 h-full transition-all duration-700" 
+                  className="bg-slate-900 dark:bg-slate-100 h-full transition-all duration-700" 
                   style={{ width: `${(cat.total / receipt.subtotal) * 100}%` }}
                 />
               </div>
@@ -149,9 +149,9 @@ export default function SplitSummary({ receipt, people }: SplitSummaryProps) {
       </section>
 
       {unassignedSubtotal > 0.01 && (
-        <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl flex gap-3 items-start animate-pulse">
+        <div className="p-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 rounded-2xl flex gap-3 items-start animate-pulse">
           <Info className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-          <p className="text-[10px] uppercase font-bold text-orange-700 leading-tight tracking-wider">
+          <p className="text-[10px] uppercase font-bold text-orange-700 dark:text-orange-300 leading-tight tracking-wider">
             {formatCurrency(unassignedSubtotal, receipt.currency)} Unassigned
           </p>
         </div>

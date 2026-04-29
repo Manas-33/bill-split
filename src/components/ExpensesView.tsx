@@ -76,11 +76,11 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
   if (history.length === 0 || result.receiptCount === 0) {
     return (
       <div className="py-24 text-center space-y-4">
-        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-indigo-300">
+        <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-indigo-300 dark:text-indigo-500">
           <Wallet className="w-10 h-10" />
         </div>
-        <h3 className="text-xl font-bold text-slate-400">No expenses tracked yet</h3>
-        <p className="text-slate-500 max-w-sm mx-auto font-medium">
+        <h3 className="text-xl font-bold text-slate-400 dark:text-slate-500">No expenses tracked yet</h3>
+        <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-medium">
           Save receipts where you're a participant to see your spending here.
         </p>
       </div>
@@ -92,7 +92,7 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       {/* Hero total */}
-      <div className="bg-indigo-600 rounded-3xl p-8 text-white shadow-xl shadow-indigo-200 relative overflow-hidden group">
+      <div className="bg-indigo-600 dark:bg-indigo-700 rounded-3xl p-8 text-white shadow-xl shadow-indigo-200 dark:shadow-indigo-950/50 relative overflow-hidden group">
         <div className="absolute top-1/2 -translate-y-1/2 right-4 opacity-10 group-hover:scale-110 transition-transform">
           <TrendingUp className="w-48 h-48" />
         </div>
@@ -151,10 +151,10 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
       </div>
 
       {/* Receipts list */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2">
-          <Receipt className="w-5 h-5 text-indigo-500" /> Receipts
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-2">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-5 flex items-center gap-2">
+          <Receipt className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> Receipts
+          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-2">
             {filtered.entries.length}
           </span>
         </h3>
@@ -164,31 +164,31 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
             return (
               <div
                 key={e.id}
-                className="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden"
+                className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden"
               >
                 <button
                   onClick={() => setExpandedReceipt(isOpen ? null : e.id)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition-colors"
+                  className="w-full flex items-center justify-between p-4 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 shrink-0">
+                    <div className="w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0">
                       <Receipt className="w-5 h-5" />
                     </div>
                     <div className="text-left min-w-0">
-                      <p className="font-bold text-slate-900 truncate">{e.merchantName}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{e.merchantName}</p>
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                         {e.date} · {e.monthLabel}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-base font-bold text-indigo-600">
+                    <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">
                       {formatCurrency(e.total, e.currency)}
                     </span>
                     {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-slate-400" />
+                      <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                      <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                     )}
                   </div>
                 </button>
@@ -198,11 +198,11 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-slate-200 bg-white"
+                      className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                     >
                       <div className="p-4 space-y-5">
                         <div className="space-y-2">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                             By Category
                           </p>
                           {e.categoryBreakdown.map((c) => (
@@ -215,38 +215,38 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
                                   className="w-2 h-2 rounded-full"
                                   style={{ backgroundColor: colorFor(c.category) }}
                                 />
-                                <span className="text-slate-700 font-medium">{c.category}</span>
+                                <span className="text-slate-700 dark:text-slate-200 font-medium">{c.category}</span>
                               </div>
-                              <span className="text-slate-900 font-bold">
+                              <span className="text-slate-900 dark:text-slate-100 font-bold">
                                 {formatCurrency(c.amount, e.currency)}
                               </span>
                             </div>
                           ))}
                         </div>
 
-                        <div className="space-y-2 border-t border-slate-100 pt-4">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <div className="space-y-2 border-t border-slate-100 dark:border-slate-700 pt-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                             Items Purchased
                           </p>
                           {e.items.length > 0 ? (
                             e.items.map((item, index) => (
                               <div
                                 key={`${item.name}-${index}`}
-                                className="flex items-start justify-between gap-4 rounded-xl bg-slate-50 p-3 text-sm"
+                                className="flex items-start justify-between gap-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-sm"
                               >
                                 <div className="min-w-0">
-                                  <p className="font-bold text-slate-800 truncate">{item.name}</p>
-                                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                  <p className="font-bold text-slate-800 dark:text-slate-100 truncate">{item.name}</p>
+                                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
                                     {item.category}
                                     {item.quantity !== 1 ? ` · Qty ${item.quantity}` : ''}
                                   </p>
                                 </div>
                                 <div className="shrink-0 text-right">
-                                  <p className="font-bold text-indigo-600">
+                                  <p className="font-bold text-indigo-600 dark:text-indigo-400">
                                     {formatCurrency(item.sharePrice, e.currency)}
                                   </p>
                                   {Math.abs(item.fullPrice - item.sharePrice) > 0.01 && (
-                                    <p className="text-[10px] font-medium text-slate-400">
+                                    <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
                                       of {formatCurrency(item.fullPrice, e.currency)}
                                     </p>
                                   )}
@@ -254,7 +254,7 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
                               </div>
                             ))
                           ) : (
-                            <p className="text-sm font-medium italic text-slate-400">
+                            <p className="text-sm font-medium italic text-slate-400 dark:text-slate-500">
                               No item-level expenses for this receipt.
                             </p>
                           )}
@@ -280,28 +280,104 @@ interface MonthBarChartProps {
   onSelect: (monthKey: string | null) => void;
 }
 
+/** Distinct gradient sets per month bar; cycles when there are more months than entries. */
+const MONTH_BAR_PALETTE: { idle: string; hover: string; active: string; labelActive: string }[] = [
+  {
+    idle:
+      'bg-gradient-to-t from-indigo-600/90 to-indigo-400/80 shadow-sm shadow-indigo-200/50 dark:from-indigo-500/80 dark:to-indigo-400/60 dark:shadow-indigo-950/50 dark:ring-1 dark:ring-indigo-400/30',
+    hover:
+      'bg-gradient-to-t from-indigo-600 to-indigo-400 shadow-md shadow-indigo-200/90 dark:shadow-indigo-950/55 dark:ring-1 dark:ring-indigo-400/30',
+    active:
+      'bg-gradient-to-t from-indigo-700 to-indigo-500 shadow-lg shadow-indigo-300/80 dark:shadow-indigo-950/70 dark:ring-1 dark:ring-indigo-400/40',
+    labelActive: 'text-indigo-600 dark:text-indigo-400',
+  },
+  {
+    idle:
+      'bg-gradient-to-t from-violet-600/90 to-violet-400/80 shadow-sm shadow-violet-200/50 dark:from-violet-500/80 dark:to-violet-400/60 dark:shadow-violet-950/50 dark:ring-1 dark:ring-violet-400/30',
+    hover:
+      'bg-gradient-to-t from-violet-600 to-violet-400 shadow-md shadow-violet-200/90 dark:shadow-violet-950/55 dark:ring-1 dark:ring-violet-400/30',
+    active:
+      'bg-gradient-to-t from-violet-700 to-violet-500 shadow-lg shadow-violet-300/80 dark:shadow-violet-950/70 dark:ring-1 dark:ring-violet-400/40',
+    labelActive: 'text-violet-600 dark:text-violet-400',
+  },
+  {
+    idle:
+      'bg-gradient-to-t from-fuchsia-600/90 to-fuchsia-400/80 shadow-sm shadow-fuchsia-200/50 dark:from-fuchsia-500/80 dark:to-fuchsia-400/60 dark:shadow-fuchsia-950/50 dark:ring-1 dark:ring-fuchsia-400/30',
+    hover:
+      'bg-gradient-to-t from-fuchsia-600 to-fuchsia-400 shadow-md shadow-fuchsia-200/90 dark:shadow-fuchsia-950/55 dark:ring-1 dark:ring-fuchsia-400/30',
+    active:
+      'bg-gradient-to-t from-fuchsia-700 to-fuchsia-500 shadow-lg shadow-fuchsia-300/80 dark:shadow-fuchsia-950/70 dark:ring-1 dark:ring-fuchsia-400/40',
+    labelActive: 'text-fuchsia-600 dark:text-fuchsia-400',
+  },
+  {
+    idle:
+      'bg-gradient-to-t from-sky-600/90 to-sky-400/80 shadow-sm shadow-sky-200/50 dark:from-sky-500/80 dark:to-sky-400/60 dark:shadow-sky-950/50 dark:ring-1 dark:ring-sky-400/30',
+    hover:
+      'bg-gradient-to-t from-sky-600 to-sky-400 shadow-md shadow-sky-200/90 dark:shadow-sky-950/55 dark:ring-1 dark:ring-sky-400/30',
+    active:
+      'bg-gradient-to-t from-sky-700 to-sky-500 shadow-lg shadow-sky-300/80 dark:shadow-sky-950/70 dark:ring-1 dark:ring-sky-400/40',
+    labelActive: 'text-sky-600 dark:text-sky-400',
+  },
+  {
+    idle:
+      'bg-gradient-to-t from-teal-600/90 to-teal-400/80 shadow-sm shadow-teal-200/50 dark:from-teal-500/80 dark:to-teal-400/60 dark:shadow-teal-950/50 dark:ring-1 dark:ring-teal-400/30',
+    hover:
+      'bg-gradient-to-t from-teal-600 to-teal-400 shadow-md shadow-teal-200/90 dark:shadow-teal-950/55 dark:ring-1 dark:ring-teal-400/30',
+    active:
+      'bg-gradient-to-t from-teal-700 to-teal-500 shadow-lg shadow-teal-300/80 dark:shadow-teal-950/70 dark:ring-1 dark:ring-teal-400/40',
+    labelActive: 'text-teal-600 dark:text-teal-400',
+  },
+  {
+    idle:
+      'bg-gradient-to-t from-amber-600/90 to-amber-400/80 shadow-sm shadow-amber-200/50 dark:from-amber-500/80 dark:to-amber-400/60 dark:shadow-amber-950/50 dark:ring-1 dark:ring-amber-400/30',
+    hover:
+      'bg-gradient-to-t from-amber-600 to-amber-400 shadow-md shadow-amber-200/90 dark:shadow-amber-950/55 dark:ring-1 dark:ring-amber-400/30',
+    active:
+      'bg-gradient-to-t from-amber-700 to-amber-500 shadow-lg shadow-amber-300/80 dark:shadow-amber-950/70 dark:ring-1 dark:ring-amber-400/40',
+    labelActive: 'text-amber-700 dark:text-amber-400',
+  },
+  {
+    idle:
+      'bg-gradient-to-t from-rose-600/90 to-rose-400/80 shadow-sm shadow-rose-200/50 dark:from-rose-500/80 dark:to-rose-400/60 dark:shadow-rose-950/50 dark:ring-1 dark:ring-rose-400/30',
+    hover:
+      'bg-gradient-to-t from-rose-600 to-rose-400 shadow-md shadow-rose-200/90 dark:shadow-rose-950/55 dark:ring-1 dark:ring-rose-400/30',
+    active:
+      'bg-gradient-to-t from-rose-700 to-rose-500 shadow-lg shadow-rose-300/80 dark:shadow-rose-950/70 dark:ring-1 dark:ring-rose-400/40',
+    labelActive: 'text-rose-600 dark:text-rose-400',
+  },
+  {
+    idle:
+      'bg-gradient-to-t from-emerald-600/90 to-emerald-400/80 shadow-sm shadow-emerald-200/50 dark:from-emerald-500/80 dark:to-emerald-400/60 dark:shadow-emerald-950/50 dark:ring-1 dark:ring-emerald-400/30',
+    hover:
+      'bg-gradient-to-t from-emerald-600 to-emerald-400 shadow-md shadow-emerald-200/90 dark:shadow-emerald-950/55 dark:ring-1 dark:ring-emerald-400/30',
+    active:
+      'bg-gradient-to-t from-emerald-700 to-emerald-500 shadow-lg shadow-emerald-300/80 dark:shadow-emerald-950/70 dark:ring-1 dark:ring-emerald-400/40',
+    labelActive: 'text-emerald-600 dark:text-emerald-400',
+  },
+];
+
 function MonthBarChart({ months, maxMonth, currency, activeMonthKey, onSelect }: MonthBarChartProps) {
   const [hovered, setHovered] = useState<string | null>(null);
   const visible = hovered ?? activeMonthKey ?? months[months.length - 1]?.monthKey ?? null;
   const visibleMonth = months.find((m) => m.monthKey === visible) ?? months[months.length - 1];
   const niceMax = niceCeil(maxMonth);
   const avg = months.length > 0 ? months.reduce((s, m) => s + m.amount, 0) / months.length : 0;
-  const avgPct = niceMax > 0 ? (avg / niceMax) * 100 : 0;
+  // const avgPct = niceMax > 0 ? (avg / niceMax) * 100 : 0; // used by avg guide line (commented out below)
   const visibleDelta = visibleMonth ? visibleMonth.amount - avg : 0;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
       <div className="flex items-start justify-between mb-1 gap-3">
-        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-indigo-500" /> By Month
+        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> By Month
         </h3>
         {visibleMonth && (
           <div className="text-right">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
               {visibleMonth.monthLabel}
             </p>
             <div className="flex items-baseline justify-end gap-2">
-              <p className="text-lg font-black text-slate-900 tabular-nums leading-tight">
+              <p className="text-lg font-black text-slate-900 dark:text-slate-100 tabular-nums leading-tight">
                 {formatCurrency(visibleMonth.amount, currency)}
               </p>
               {avg > 0 && Math.abs(visibleDelta) > 0.01 && (
@@ -318,46 +394,69 @@ function MonthBarChart({ months, maxMonth, currency, activeMonthKey, onSelect }:
           </div>
         )}
       </div>
-      <p className="text-xs text-slate-400 font-medium mb-5 italic">Click a month to filter below</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mb-5 italic">Click a month to filter below</p>
 
       {months.length === 0 ? (
-        <p className="text-sm text-slate-400 italic">No monthly data.</p>
+        <p className="text-sm text-slate-400 dark:text-slate-500 italic">No monthly data.</p>
       ) : (
-        <div className="relative pl-11 pr-1">
-          <div className="absolute left-0 top-0 bottom-7 flex flex-col justify-between text-[10px] font-bold text-slate-400 tabular-nums">
-            <span>{formatCompactCurrency(niceMax, currency)}</span>
-            <span>{formatCompactCurrency(niceMax * 0.75, currency)}</span>
-            <span>{formatCompactCurrency(niceMax / 2, currency)}</span>
-            <span>{formatCompactCurrency(niceMax * 0.25, currency)}</span>
-            <span>{formatCompactCurrency(0, currency)}</span>
+        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-1.5 items-end">
+          <div className="relative h-52 w-full">
+            <div className="pointer-events-none absolute inset-0 flex flex-col justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 tabular-nums leading-none">
+              <span>{formatCompactCurrency(niceMax, currency)}</span>
+              <span>{formatCompactCurrency(niceMax * 0.75, currency)}</span>
+              <span>{formatCompactCurrency(niceMax / 2, currency)}</span>
+              <span>{formatCompactCurrency(niceMax * 0.25, currency)}</span>
+              <span>{formatCompactCurrency(0, currency)}</span>
+            </div>
+            {/* Avg value on y-axis (disabled with avg line)
+            {avg > 0 && (
+              <div
+                className="pointer-events-none absolute left-0 right-0 z-10 flex justify-end pr-0.5"
+                style={{ top: `${100 - avgPct}%`, transform: 'translateY(-50%)' }}
+              >
+                <span
+                  className="text-[9px] font-bold tabular-nums leading-none text-amber-700 dark:text-amber-400/95"
+                  title={`Average ${formatCurrency(avg, currency)}`}
+                  aria-label={`Average ${formatCurrency(avg, currency)}`}
+                >
+                  {formatCompactCurrency(avg, currency)}
+                </span>
+              </div>
+            )}
+            */}
           </div>
 
-          <div className="relative h-52">
-            <div className="absolute inset-x-0 top-0 border-t border-dashed border-slate-200" />
-            <div className="absolute inset-x-0 top-1/4 border-t border-dashed border-slate-100" />
-            <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-slate-200" />
-            <div className="absolute inset-x-0 top-3/4 border-t border-dashed border-slate-100" />
-            <div className="absolute inset-x-0 bottom-0 border-t border-slate-300" />
+          <div className="relative min-w-0 h-52 rounded-lg bg-slate-50/60 dark:bg-slate-950/40 ring-1 ring-inset ring-slate-200/80 dark:ring-slate-700/60">
+            <div className="absolute inset-x-0 top-0 border-t border-dashed border-slate-300/90 dark:border-slate-600/80" />
+            <div className="absolute inset-x-0 top-1/4 border-t border-dashed border-slate-200/90 dark:border-slate-700/50" />
+            <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-slate-200/90 dark:border-slate-700/50" />
+            <div className="absolute inset-x-0 top-3/4 border-t border-dashed border-slate-200/90 dark:border-slate-700/50" />
+            <div className="absolute inset-x-0 bottom-0 border-t border-slate-400/90 dark:border-slate-500/70" />
 
+            {/* Average guide line + glow (disabled)
             {avg > 0 && (
               <div
                 className="absolute inset-x-0 z-10 pointer-events-none"
                 style={{ bottom: `${avgPct}%` }}
               >
-                <div className="border-t border-dashed border-amber-400" />
-                <div className="absolute -top-2 right-0 text-[9px] font-black tracking-widest uppercase text-amber-600 bg-white px-1.5 rounded">
-                  Avg {formatCompactCurrency(avg, currency)}
-                </div>
+                <div
+                  className="pointer-events-none absolute inset-x-0 -top-1 h-3 bg-gradient-to-r from-transparent via-amber-400/40 to-transparent blur-[3px] opacity-90 dark:via-amber-400/35 dark:opacity-80"
+                  aria-hidden
+                />
+                <div className="relative border-t-2 border-dashed border-amber-600 dark:border-amber-300/95" />
               </div>
             )}
+            */}
 
             <div className="relative h-full flex items-end gap-1.5 z-20">
-              {months.map((m) => {
+              {months.map((m, barIdx) => {
                 const pct = niceMax > 0 ? (m.amount / niceMax) * 100 : 0;
                 const heightPct = Math.max(pct, m.amount > 0 ? 2 : 0);
                 const isActive = activeMonthKey === m.monthKey;
                 const isHovered = hovered === m.monthKey;
                 const showTooltip = isHovered || isActive;
+                const pal = MONTH_BAR_PALETTE[barIdx % MONTH_BAR_PALETTE.length];
+                const barTone = isActive ? pal.active : isHovered ? pal.hover : pal.idle;
                 return (
                   <button
                     key={m.monthKey}
@@ -373,23 +472,17 @@ function MonthBarChart({ months, maxMonth, currency, activeMonthKey, onSelect }:
                         className="absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none"
                         style={{ bottom: `calc(${heightPct}% + 10px)` }}
                       >
-                        <div className="rounded-md bg-slate-900 px-2 py-1 text-[10px] font-black text-white tabular-nums whitespace-nowrap shadow-lg">
+                        <div className="rounded-md bg-slate-900 px-2 py-1 text-[10px] font-black text-white tabular-nums whitespace-nowrap shadow-lg ring-1 ring-white/10 dark:bg-slate-700 dark:ring-white/15">
                           {formatCurrency(m.amount, currency)}
                         </div>
-                        <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 rotate-45 bg-slate-900" />
+                        <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 rotate-45 bg-slate-900 dark:bg-slate-700" />
                       </div>
                     )}
                     <div
-                      className={`relative w-full rounded-t-md transition-all duration-300 overflow-hidden ${
-                        isActive
-                          ? 'bg-gradient-to-t from-indigo-700 to-indigo-500 shadow-lg shadow-indigo-200'
-                          : isHovered
-                          ? 'bg-gradient-to-t from-indigo-600 to-indigo-400 shadow-md shadow-indigo-100'
-                          : 'bg-gradient-to-t from-indigo-400/85 to-indigo-300/75'
-                      }`}
+                      className={`relative w-full rounded-t-md transition-all duration-300 overflow-hidden ${barTone}`}
                       style={{ height: `${heightPct}%` }}
                     >
-                      <div className="absolute inset-x-0 top-0 h-1.5 bg-white/30 rounded-t-md" />
+                      <div className="absolute inset-x-0 top-0 h-1.5 bg-white/30 dark:bg-white/15 rounded-t-md" />
                     </div>
                   </button>
                 );
@@ -397,26 +490,30 @@ function MonthBarChart({ months, maxMonth, currency, activeMonthKey, onSelect }:
             </div>
           </div>
 
-          <div className="flex gap-1.5 mt-2 pl-0">
-            {months.map((m) => {
-              const isActive = activeMonthKey === m.monthKey;
-              const isHovered = hovered === m.monthKey;
-              const short = m.monthLabel.split(' ')[0]?.slice(0, 3) ?? m.monthLabel;
-              return (
-                <div
-                  key={`${m.monthKey}-label`}
-                  className={`flex-1 text-center text-[10px] font-bold uppercase tracking-wider truncate transition-colors ${
-                    isActive
-                      ? 'text-indigo-600'
-                      : isHovered
-                      ? 'text-slate-600'
-                      : 'text-slate-400'
-                  }`}
-                >
-                  {short}
-                </div>
-              );
-            })}
+          <div className="col-span-2 mt-2 flex gap-1.5">
+            <div className="w-11 shrink-0" aria-hidden />
+            <div className="flex min-w-0 flex-1 gap-1.5">
+              {months.map((m, barIdx) => {
+                const isActive = activeMonthKey === m.monthKey;
+                const isHovered = hovered === m.monthKey;
+                const short = m.monthLabel.split(' ')[0]?.slice(0, 3) ?? m.monthLabel;
+                const pal = MONTH_BAR_PALETTE[barIdx % MONTH_BAR_PALETTE.length];
+                return (
+                  <div
+                    key={`${m.monthKey}-label`}
+                    className={`flex-1 text-center text-[10px] font-bold uppercase tracking-wider truncate transition-colors ${
+                      isActive
+                        ? pal.labelActive
+                        : isHovered
+                        ? 'text-slate-600 dark:text-slate-300'
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  >
+                    {short}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -455,14 +552,14 @@ function CategoryDonutChart({ categories, grandTotal, currency, subtitle }: Cate
   const focusedColor = focused ? colorFor(focused.category) : null;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-      <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
-        <PieChart className="w-5 h-5 text-indigo-500" /> By Category
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
+      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1 flex items-center gap-2">
+        <PieChart className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> By Category
       </h3>
-      <p className="text-xs text-slate-400 font-medium mb-5 italic">{subtitle}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mb-5 italic">{subtitle}</p>
 
       {categories.length === 0 ? (
-        <div className="flex items-center justify-center py-12 text-sm text-slate-400 italic">
+        <div className="flex items-center justify-center py-12 text-sm text-slate-400 dark:text-slate-500 italic">
           No categorized spending.
         </div>
       ) : (
@@ -474,7 +571,7 @@ function CategoryDonutChart({ categories, grandTotal, currency, subtitle }: Cate
                 cy={size / 2}
                 r={radius}
                 fill="none"
-                stroke="#F1F5F9"
+                className="stroke-slate-200 dark:stroke-slate-700"
                 strokeWidth={stroke}
               />
               {segments.map((seg) => {
@@ -507,10 +604,10 @@ function CategoryDonutChart({ categories, grandTotal, currency, subtitle }: Cate
                     className="inline-block w-1.5 h-1.5 rounded-full mb-2"
                     style={{ backgroundColor: focusedColor || undefined }}
                   />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 truncate max-w-full">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 truncate max-w-full">
                     {focused.category}
                   </p>
-                  <p className="text-2xl font-black text-slate-900 tabular-nums leading-tight mt-1">
+                  <p className="text-2xl font-black text-slate-900 dark:text-slate-100 tabular-nums leading-tight mt-1">
                     {formatCurrency(focused.amount, currency)}
                   </p>
                   <p
@@ -522,13 +619,13 @@ function CategoryDonutChart({ categories, grandTotal, currency, subtitle }: Cate
                 </>
               ) : (
                 <>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                     Total
                   </p>
-                  <p className="text-2xl font-black text-slate-900 tabular-nums leading-tight mt-1">
+                  <p className="text-2xl font-black text-slate-900 dark:text-slate-100 tabular-nums leading-tight mt-1">
                     {formatCurrency(grandTotal, currency)}
                   </p>
-                  <p className="text-[10px] font-bold text-slate-400 mt-1">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1">
                     {categories.length} categor{categories.length === 1 ? 'y' : 'ies'}
                   </p>
                 </>
@@ -564,7 +661,7 @@ function CategoryDonutChart({ categories, grandTotal, currency, subtitle }: Cate
                       className="w-3 h-3 rounded-md shrink-0 ring-1 ring-black/5"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="text-xs font-bold text-slate-800 truncate">{c.category}</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{c.category}</span>
                   </div>
                   <div className="relative flex items-center gap-3 shrink-0 tabular-nums">
                     <span
@@ -573,7 +670,7 @@ function CategoryDonutChart({ categories, grandTotal, currency, subtitle }: Cate
                     >
                       {pct.toFixed(0)}%
                     </span>
-                    <span className="text-xs font-bold text-slate-900 w-16 text-right">
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 w-16 text-right">
                       {formatCurrency(c.amount, currency)}
                     </span>
                   </div>
