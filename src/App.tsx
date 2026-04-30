@@ -5,8 +5,9 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Users, Receipt, Trash2, UserPlus, Info, History, LayoutDashboard, ChevronRight, CheckCircle2, TrendingUp, LogOut, House, X, Settings, Wallet, Sparkles, Clock3, Moon, Sun } from 'lucide-react';
-import { ExtractedReceipt, Person, PERSON_COLORS, SavedReceipt } from './types';
+import { Plus, Users, Receipt, Trash2, UserPlus, Info, History, LayoutDashboard, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, TrendingUp, LogOut, House, X, Settings, Wallet, Sparkles, Clock3, Moon, Sun } from 'lucide-react';
+import { ExtractedReceipt, Person, PERSON_COLORS, SavedReceipt, Settlement } from './types';
+import { saveSettlement, removeSettlement } from './lib/settlements';
 import { processReceipt } from './services/claudeService';
 import { cn, formatCurrency, getReceiptDate, toDateInputValue, toIsoDateLocal } from './lib/utils';
 import { readDomIsDark, getStoredTheme, toggleStoredTheme } from './lib/theme';
@@ -70,6 +71,7 @@ export default function App() {
   ]);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<SavedReceipt[]>([]);
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [currentView, setCurrentView] = useState<'main' | 'history' | 'balances' | 'expenses'>('main');
   const [user, setUser] = useState<User | null>(null);
   const [homeConfirmOpen, setHomeConfirmOpen] = useState(false);
@@ -78,6 +80,7 @@ export default function App() {
   const [profileReady, setProfileReady] = useState(false);
   const [editingReceiptId, setEditingReceiptId] = useState<string | null>(null);
   const [editingReceiptTimestamp, setEditingReceiptTimestamp] = useState<number | null>(null);
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
   const [isDarkUi, setIsDarkUi] = useState(readDomIsDark);
 
   useEffect(() => {
@@ -99,6 +102,10 @@ export default function App() {
     () => aggregateOwedBalances(history, myDisplayName),
     [history, myDisplayName]
   );
+  const netOwedToYou = useMemo(() => {
+    const totalSettled = settlements.reduce((sum, s) => sum + s.amount, 0);
+    return Math.max(0, grandTotalOwedToYou - totalSettled);
+  }, [grandTotalOwedToYou, settlements]);
   const myExpenses = useMemo(
     () => aggregateMyExpenses(history, myDisplayName),
     [history, myDisplayName]
@@ -164,6 +171,7 @@ export default function App() {
       setUser(currentUser);
       if (!currentUser) {
         setHistory([]);
+        setSettlements([]);
         setProfileReady(false);
       }
     });
@@ -228,10 +236,24 @@ export default function App() {
     return () => window.clearTimeout(t);
   }, [people, user, profileReady]);
 
+  // Load settlements from Firestore
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, 'settlements'), where('userId', '==', user.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Settlement));
+      data.sort((a, b) => b.timestamp - a.timestamp);
+      setSettlements(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'settlements');
+    });
+    return unsubscribe;
+  }, [user]);
+
   // Load history from Firestore
   useEffect(() => {
     if (!user) return;
-    
+
     const q = query(collection(db, 'receipts'), where('userId', '==', user.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const userReceipts = snapshot.docs
@@ -322,6 +344,23 @@ export default function App() {
     setEditingReceiptId(entry.id);
     setEditingReceiptTimestamp(entry.timestamp);
     setCurrentView('main');
+  };
+
+  const handleAddSettlement = async (data: Omit<Settlement, 'id' | 'timestamp'>) => {
+    if (!user) return;
+    try {
+      await saveSettlement(user.uid, data);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'settlements');
+    }
+  };
+
+  const handleDeleteSettlement = async (id: string) => {
+    try {
+      await removeSettlement(id);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `settlements/${id}`);
+    }
   };
 
   const deleteFromHistory = async (id: string) => {
@@ -494,6 +533,15 @@ export default function App() {
   };
 
 
+  const toggleMonthCollapse = (monthKey: string) => {
+    setCollapsedMonths(prev => {
+      const next = new Set(prev);
+      if (next.has(monthKey)) next.delete(monthKey);
+      else next.add(monthKey);
+      return next;
+    });
+  };
+
   const reset = () => {
     setReceipt(null);
     setError(null);
@@ -640,7 +688,7 @@ export default function App() {
                 <div className="leading-none">
                   <p className="text-[9px] font-black uppercase tracking-widest opacity-70">Owed</p>
                   <p className="text-sm font-bold whitespace-nowrap">
-                    {formatCurrency(grandTotalOwedToYou, owedToYouCurrency)}
+                    {formatCurrency(netOwedToYou, owedToYouCurrency)}
                   </p>
                 </div>
               </div>
@@ -667,7 +715,13 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
             >
-              <BalancesView history={history} myDisplayName={myDisplayName} />
+              <BalancesView
+                history={history}
+                myDisplayName={myDisplayName}
+                settlements={settlements}
+                onAddSettlement={handleAddSettlement}
+                onDeleteSettlement={handleDeleteSettlement}
+              />
             </motion.div>
           ) : currentView === 'expenses' ? (
             <motion.div
@@ -733,110 +787,119 @@ export default function App() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-8">
-                  {groupedHistory.map((group) => (
-                    <section key={group.monthKey} className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{group.monthLabel}</h3>
-                          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                            {group.entries.length} {group.entries.length === 1 ? 'receipt' : 'receipts'}
-                          </p>
-                        </div>
-                        <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1" />
-                      </div>
+                <div className="space-y-3">
+                  {groupedHistory.map((group) => {
+                    const isCollapsed = collapsedMonths.has(group.monthKey);
+                    return (
+                      <div key={group.monthKey} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => toggleMonthCollapse(group.monthKey)}
+                          className="w-full flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{group.monthLabel}</h3>
+                            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-500 dark:text-slate-400">
+                              {group.entries.length} {group.entries.length === 1 ? 'receipt' : 'receipts'}
+                            </span>
+                          </div>
+                          {isCollapsed
+                            ? <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                            : <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                          }
+                        </button>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                        {group.entries.map((entry) => {
-                          const myReceiptExpense = myExpenseByReceiptId.get(entry.id);
-                          return (
-                            <div key={entry.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-5 shadow-sm hover:shadow-md hover:border-indigo-100 dark:hover:border-indigo-500/40 transition-all relative group overflow-hidden">
-                              <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-indigo-200 dark:via-indigo-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-11 h-11 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-2xl flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0">
-                                    <Receipt className="w-5 h-5" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                      {getReceiptDate(entry).toLocaleDateString(undefined, {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                      })}
-                                    </p>
-                                    <h4 className="font-bold text-slate-900 dark:text-slate-100 truncate">
-                                      {entry.data.merchantName || 'Receipt Split'}
-                                    </h4>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => deleteFromHistory(entry.id)}
-                                  title="Delete receipt"
-                                  aria-label="Delete receipt"
-                                  className="w-9 h-9 rounded-xl text-slate-300 dark:text-slate-600 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all flex items-center justify-center shrink-0"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-
-                              <div className="mt-6 flex items-end justify-between gap-4">
-                                <div>
-                                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                                    Total
-                                  </p>
-                                  <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">
-                                    {formatCurrency(entry.data.total, entry.data.currency)}
-                                  </div>
-                                </div>
-                                <div className="flex -space-x-1.5 shrink-0">
-                                  {entry.people.slice(0, 5).map(p => (
-                                    <div
-                                      key={p.id}
-                                      className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-800 shadow-sm flex items-center justify-center text-[9px] font-bold text-white"
-                                      style={{ backgroundColor: p.color }}
-                                      title={p.name}
+                        {!isCollapsed && (
+                          <div className="border-t border-slate-100 dark:border-slate-700 overflow-x-auto">
+                            <table className="w-full text-sm min-w-[620px]">
+                              <thead>
+                                <tr className="bg-slate-50/70 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-700">
+                                  <th scope="col" className="text-left px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Merchant</th>
+                                  <th scope="col" className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Date</th>
+                                  <th scope="col" className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Total</th>
+                                  <th scope="col" className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">You spent</th>
+                                  <th scope="col" className="text-center px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">People</th>
+                                  <th scope="col" className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Items</th>
+                                  <th scope="col" className="px-4 py-3 w-28" />
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {group.entries.map((entry) => {
+                                  const myReceiptExpense = myExpenseByReceiptId.get(entry.id);
+                                  return (
+                                    <tr
+                                      key={entry.id}
+                                      className="group border-b border-slate-50 dark:border-slate-800/80 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
                                     >
-                                      {p.name[0]}
-                                    </div>
-                                  ))}
-                                  {entry.people.length > 5 && (
-                                    <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700 border-2 border-white dark:border-slate-800 shadow-sm flex items-center justify-center text-[9px] font-bold text-slate-400">
-                                      +{entry.people.length - 5}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
-                                <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/80 px-3 py-3">
-                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Items</p>
-                                  <p className="mt-1 font-bold text-slate-800 dark:text-slate-200">{entry.data.items.length}</p>
-                                </div>
-                                <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/80 px-3 py-3">
-                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">People</p>
-                                  <p className="mt-1 font-bold text-slate-800 dark:text-slate-200">{entry.people.length}</p>
-                                </div>
-                                <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/80 px-3 py-3">
-                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">You spent</p>
-                                  <p className="mt-1 font-bold text-slate-800 dark:text-slate-200">
-                                    {formatCurrency(myReceiptExpense?.total ?? 0, myReceiptExpense?.currency ?? entry.data.currency)}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <button
-                                onClick={() => loadFromHistory(entry)}
-                                className="mt-5 w-full h-12 bg-slate-900 dark:bg-slate-100 hover:bg-indigo-600 dark:hover:bg-indigo-500 text-white dark:text-slate-900 hover:text-white dark:hover:text-white rounded-2xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                              >
-                                Load receipt <ChevronRight className="w-4 h-4" />
-                              </button>
-                            </div>
-                          );
-                        })}
+                                      <td className="px-5 py-3.5">
+                                        <div className="flex items-center gap-2.5">
+                                          <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0">
+                                            <Receipt className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                                          </div>
+                                          <span className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-[160px]">
+                                            {entry.data.merchantName || 'Receipt Split'}
+                                          </span>
+                                        </div>
+                                      </td>
+                                      <td className="px-4 py-3.5 font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                        {getReceiptDate(entry).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                      </td>
+                                      <td className="px-4 py-3.5 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                                        {formatCurrency(entry.data.total, entry.data.currency)}
+                                      </td>
+                                      <td className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                        {formatCurrency(myReceiptExpense?.total ?? 0, myReceiptExpense?.currency ?? entry.data.currency)}
+                                      </td>
+                                      <td className="px-4 py-3.5">
+                                        <div className="flex justify-center -space-x-1.5">
+                                          {entry.people.slice(0, 4).map(p => (
+                                            <div
+                                              key={p.id}
+                                              className="w-6 h-6 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-[8px] font-bold text-white shadow-sm"
+                                              style={{ backgroundColor: p.color }}
+                                              title={p.name}
+                                            >
+                                              {p.name[0]}
+                                            </div>
+                                          ))}
+                                          {entry.people.length > 4 && (
+                                            <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[8px] font-bold text-slate-500 dark:text-slate-300">
+                                              +{entry.people.length - 4}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="px-4 py-3.5 text-right font-semibold text-slate-500 dark:text-slate-400">
+                                        {entry.data.items.length}
+                                      </td>
+                                      <td className="px-4 py-3.5">
+                                        <div className="flex items-center gap-1.5 justify-end">
+                                          <button
+                                            onClick={() => loadFromHistory(entry)}
+                                            className="h-8 px-3 bg-slate-900 dark:bg-slate-100 hover:bg-indigo-600 dark:hover:bg-indigo-500 text-white dark:text-slate-900 hover:text-white dark:hover:text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1 whitespace-nowrap"
+                                          >
+                                            Load <ChevronRight className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            onClick={() => deleteFromHistory(entry.id)}
+                                            title="Delete receipt"
+                                            aria-label="Delete receipt"
+                                            className="w-8 h-8 rounded-xl text-slate-300 dark:text-slate-600 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shrink-0"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
                       </div>
-                    </section>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </motion.div>

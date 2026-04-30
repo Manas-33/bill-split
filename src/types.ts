@@ -38,6 +38,16 @@ export interface SavedReceipt {
   timestamp: number;
 }
 
+export interface Settlement {
+  id: string;
+  personName: string;
+  amount: number;
+  currency: string;
+  date: string;
+  note?: string;
+  timestamp: number;
+}
+
 export const CATEGORIES = [
   'Grocery',
   'Electronics',

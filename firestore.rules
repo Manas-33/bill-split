@@ -77,5 +77,24 @@ service cloud.firestore {
         isValidUserProfile(incoming());
       allow delete: if false;
     }
+
+    function isValidSettlement(data) {
+      return data.keys().hasAll(['userId', 'personName', 'amount', 'currency', 'date', 'timestamp']) &&
+             data.keys().hasOnly(['userId', 'personName', 'amount', 'currency', 'date', 'timestamp', 'note']) &&
+             data.userId == request.auth.uid &&
+             data.personName is string && checkSize(data.personName, 100) &&
+             data.amount is number && data.amount > 0 &&
+             data.currency is string && checkSize(data.currency, 10) &&
+             data.date is string && checkSize(data.date, 50) &&
+             isValidUpdatedAt(data.timestamp) &&
+             (!data.keys().hasAny(['note']) || (data.note is string && checkSize(data.note, 500)));
+    }
+
+    match /settlements/{settlementId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidSettlement(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
   }
 }

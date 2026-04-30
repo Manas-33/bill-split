@@ -152,113 +152,183 @@ export default function ExpensesView({ history, myDisplayName }: ExpensesViewPro
 
       {/* Receipts list */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-5 flex items-center gap-2">
-          <Receipt className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> Receipts
-          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-2">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">
+              Detail
+            </p>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> Receipts
+            </h3>
+          </div>
+          <span className="h-8 px-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center text-sm font-bold text-slate-500 dark:text-slate-400 tabular-nums">
             {filtered.entries.length}
           </span>
-        </h3>
-        <div className="space-y-3">
+        </div>
+
+        <div className="space-y-2">
           {filtered.entries.map((e) => {
             const isOpen = expandedReceipt === e.id;
+            const topCategory = e.categoryBreakdown[0];
+            const iconColor = topCategory ? colorFor(topCategory.category) : '#6366f1';
             return (
               <div
                 key={e.id}
-                className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden"
+                className="rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden"
               >
                 <button
                   onClick={() => setExpandedReceipt(isOpen ? null : e.id)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+                  className="w-full flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0">
-                      <Receipt className="w-5 h-5" />
+                  {/* Category-tinted icon */}
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: iconColor + '1a' }}
+                  >
+                    <Receipt className="w-4 h-4" style={{ color: iconColor }} />
+                  </div>
+
+                  {/* Merchant + meta */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-900 dark:text-slate-100 truncate text-sm leading-tight">
+                      {e.merchantName}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                        {e.date}
+                      </span>
+                      {e.items.length > 0 && (
+                        <>
+                          <span className="text-slate-200 dark:text-slate-700 select-none">·</span>
+                          <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                            {e.items.length} item{e.items.length !== 1 ? 's' : ''}
+                          </span>
+                        </>
+                      )}
+                      {e.categoryBreakdown.length > 0 && (
+                        <div className="flex items-center gap-0.5">
+                          {e.categoryBreakdown.slice(0, 5).map((c) => (
+                            <span
+                              key={c.category}
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: colorFor(c.category) }}
+                              title={c.category}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-left min-w-0">
-                      <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{e.merchantName}</p>
+                  </div>
+
+                  {/* Amount + chevron */}
+                  <div className="shrink-0 flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-bold text-slate-900 dark:text-slate-100 text-sm tabular-nums leading-tight">
+                        {formatCurrency(e.total, e.currency)}
+                      </p>
                       <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                        {e.date} · {e.monthLabel}
+                        your share
                       </p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">
-                      {formatCurrency(e.total, e.currency)}
-                    </span>
-                    {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                    )}
+                    {isOpen
+                      ? <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                      : <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                    }
                   </div>
                 </button>
+
                 <AnimatePresence>
                   {isOpen && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                      className="border-t border-slate-100 dark:border-slate-700"
                     >
-                      <div className="p-4 space-y-5">
-                        <div className="space-y-2">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                            By Category
-                          </p>
-                          {e.categoryBreakdown.map((c) => (
-                            <div
-                              key={c.category}
-                              className="flex justify-between items-center text-sm"
-                            >
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className="w-2 h-2 rounded-full"
-                                  style={{ backgroundColor: colorFor(c.category) }}
-                                />
-                                <span className="text-slate-700 dark:text-slate-200 font-medium">{c.category}</span>
-                              </div>
-                              <span className="text-slate-900 dark:text-slate-100 font-bold">
-                                {formatCurrency(c.amount, e.currency)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                      <div className="p-4 space-y-5 bg-slate-50/50 dark:bg-slate-800/20">
 
-                        <div className="space-y-2 border-t border-slate-100 dark:border-slate-700 pt-4">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                            Items Purchased
+                        {/* Category bars */}
+                        {e.categoryBreakdown.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
+                              By Category
+                            </p>
+                            <div className="space-y-2">
+                              {e.categoryBreakdown.map((c) => {
+                                const pct = e.total > 0 ? (c.amount / e.total) * 100 : 0;
+                                return (
+                                  <div key={c.category} className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5 w-28 shrink-0">
+                                      <span
+                                        className="w-2 h-2 rounded-full shrink-0"
+                                        style={{ backgroundColor: colorFor(c.category) }}
+                                      />
+                                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 truncate">
+                                        {c.category}
+                                      </span>
+                                    </div>
+                                    <div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full"
+                                        style={{ width: `${pct}%`, backgroundColor: colorFor(c.category) }}
+                                      />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 w-16 text-right tabular-nums shrink-0">
+                                      {formatCurrency(c.amount, e.currency)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Items table */}
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
+                            Items
                           </p>
                           {e.items.length > 0 ? (
-                            e.items.map((item, index) => (
-                              <div
-                                key={`${item.name}-${index}`}
-                                className="flex items-start justify-between gap-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-sm"
-                              >
-                                <div className="min-w-0">
-                                  <p className="font-bold text-slate-800 dark:text-slate-100 truncate">{item.name}</p>
-                                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                                    {item.category}
-                                    {item.quantity !== 1 ? ` · Qty ${item.quantity}` : ''}
-                                  </p>
-                                </div>
-                                <div className="shrink-0 text-right">
-                                  <p className="font-bold text-indigo-600 dark:text-indigo-400">
-                                    {formatCurrency(item.sharePrice, e.currency)}
-                                  </p>
-                                  {Math.abs(item.fullPrice - item.sharePrice) > 0.01 && (
-                                    <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
-                                      of {formatCurrency(item.fullPrice, e.currency)}
+                            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 divide-y divide-slate-50 dark:divide-slate-800">
+                              {e.items.map((item, i) => (
+                                <div
+                                  key={`${item.name}-${i}`}
+                                  className="flex items-center justify-between gap-4 px-4 py-2.5"
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <span
+                                      className="w-2 h-2 rounded-full shrink-0"
+                                      style={{ backgroundColor: colorFor(item.category) }}
+                                    />
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                        {item.name}
+                                      </p>
+                                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                        {item.category}{item.quantity !== 1 ? ` · ×${item.quantity}` : ''}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="shrink-0 text-right">
+                                    <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                                      {formatCurrency(item.sharePrice, e.currency)}
                                     </p>
-                                  )}
+                                    {Math.abs(item.fullPrice - item.sharePrice) > 0.01 && (
+                                      <p className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums">
+                                        of {formatCurrency(item.fullPrice, e.currency)}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ))
+                              ))}
+                            </div>
                           ) : (
                             <p className="text-sm font-medium italic text-slate-400 dark:text-slate-500">
                               No item-level expenses for this receipt.
                             </p>
                           )}
                         </div>
+
                       </div>
                     </motion.div>
                   )}
