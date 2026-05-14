@@ -260,6 +260,10 @@ function roundMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+function hasSpentOnReceipt(total: number): boolean {
+  return roundMoney(total) > 0;
+}
+
 export function exportExpensesXlsx(result: MyExpensesResult, title: string) {
   const { summaryRows, monthRows, receiptRows, categoryRows } = expenseWorkbookRows(result, title);
   const sheetNames = ['Summary', 'Receipts', 'Categories', 'Months'];
@@ -589,18 +593,20 @@ export function exportExpensesPdf(result: MyExpensesResult, title: string) {
   );
 }
 
-function balanceWorkbookRows(balance: BalanceRow) {
+function balanceWorkbookRows(balance: BalanceRow, scope?: string) {
+  const receiptDetails = balance.receiptDetails.filter((detail) => hasSpentOnReceipt(detail.totalForReceipt));
   const summaryRows: CellValue[][] = [
     ['BillSplit Individual Total'],
     ['Person', balance.displayName],
+    ...(scope ? [['Scope', scope] as CellValue[]] : []),
     ['Total', roundMoney(balance.total)],
-    ['Receipt count', balance.receiptDetails.length],
+    ['Receipt count', receiptDetails.length],
     ['Currency', balance.currency],
   ];
 
   const receiptRows: CellValue[][] = [
     ['Date', 'Merchant', 'Total', 'Currency', 'Shared fees and tax'],
-    ...balance.receiptDetails.map((detail) => [
+    ...receiptDetails.map((detail) => [
       detail.date,
       detail.merchantName,
       roundMoney(detail.totalForReceipt),
@@ -611,7 +617,7 @@ function balanceWorkbookRows(balance: BalanceRow) {
 
   const itemRows: CellValue[][] = [
     ['Date', 'Merchant', 'Item', 'Share amount', 'Currency'],
-    ...balance.receiptDetails.flatMap((detail) => [
+    ...receiptDetails.flatMap((detail) => [
       ...detail.items.map((item) => [
         detail.date,
         detail.merchantName,
@@ -628,8 +634,8 @@ function balanceWorkbookRows(balance: BalanceRow) {
   return { summaryRows, receiptRows, itemRows };
 }
 
-export function exportBalanceXlsx(balance: BalanceRow) {
-  const { summaryRows, receiptRows, itemRows } = balanceWorkbookRows(balance);
+export function exportBalanceXlsx(balance: BalanceRow, scope?: string) {
+  const { summaryRows, receiptRows, itemRows } = balanceWorkbookRows(balance, scope);
   const sheetNames = ['Summary', 'Receipts', 'Items'];
   const zip = createZip([
     { name: '[Content_Types].xml', content: contentTypesXml(sheetNames.length) },
@@ -640,21 +646,24 @@ export function exportBalanceXlsx(balance: BalanceRow) {
     { name: 'xl/worksheets/sheet2.xml', content: worksheetXml(receiptRows) },
     { name: 'xl/worksheets/sheet3.xml', content: worksheetXml(itemRows) },
   ]);
+  const fileSuffix = scope ? `-${safeFilePart(scope)}` : '-total';
   downloadBlob(
     new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-    `billsplit-${safeFilePart(balance.displayName)}-total.xlsx`
+    `billsplit-${safeFilePart(balance.displayName)}${fileSuffix}.xlsx`
   );
 }
 
-export function exportBalancePdf(balance: BalanceRow) {
-  const report = new PdfReport('Individual Total', balance.displayName, [
+export function exportBalancePdf(balance: BalanceRow, scope?: string) {
+  const subtitle = scope ? `${balance.displayName} · ${scope}` : balance.displayName;
+  const receiptDetails = balance.receiptDetails.filter((detail) => hasSpentOnReceipt(detail.totalForReceipt));
+  const report = new PdfReport('Individual Total', subtitle, [
     { label: 'Total', value: formatCurrency(balance.total, balance.currency) },
-    { label: 'Receipts', value: String(balance.receiptDetails.length) },
+    { label: 'Receipts', value: String(receiptDetails.length) },
     { label: 'Currency', value: balance.currency },
   ]);
 
   report.section('Receipt Details');
-  balance.receiptDetails.forEach((detail) => {
+  receiptDetails.forEach((detail) => {
     report.receiptCard({
       title: detail.merchantName,
       meta: detail.date,
@@ -677,8 +686,9 @@ export function exportBalancePdf(balance: BalanceRow) {
   });
 
   const pdf = report.finish();
+  const fileSuffix = scope ? `-${safeFilePart(scope)}` : '-total';
   downloadBlob(
     new Blob([pdf], { type: 'application/pdf' }),
-    `billsplit-${safeFilePart(balance.displayName)}-total.pdf`
+    `billsplit-${safeFilePart(balance.displayName)}${fileSuffix}.pdf`
   );
 }

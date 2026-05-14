@@ -55,6 +55,15 @@ export default function BalancesView({ history, myDisplayName, settlements, onAd
     return map;
   }, [settlements]);
 
+  const latestSettlementTimestampByKey = useMemo(() => {
+    const map = new Map<string, number>();
+    settlements.forEach(s => {
+      const current = map.get(s.personName) ?? 0;
+      if (s.timestamp > current) map.set(s.personName, s.timestamp);
+    });
+    return map;
+  }, [settlements]);
+
   const grandNetTotal = useMemo(() =>
     others.reduce((sum, p) => {
       const settled = settledByKey.get(p.key) ?? 0;
@@ -351,26 +360,68 @@ export default function BalancesView({ history, myDisplayName, settlements, onAd
                           <Banknote className="w-3.5 h-3.5" /> Settle
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          exportBalanceXlsx(person);
-                        }}
-                        className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 shadow-sm transition-colors hover:border-indigo-200 dark:hover:border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400"
-                      >
-                        <FileDown className="w-3.5 h-3.5" /> Excel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          exportBalancePdf(person);
-                        }}
-                        className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 shadow-sm transition-colors hover:border-indigo-200 dark:hover:border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400"
-                      >
-                        <FileDown className="w-3.5 h-3.5" /> PDF
-                      </button>
+                      {(() => {
+                        const latestTs = latestSettlementTimestampByKey.get(person.key);
+                        if (latestTs) {
+                          const newDetails = person.receiptDetails.filter(rd => rd.receiptTimestamp > latestTs);
+                          const newTotal = newDetails.reduce((sum, rd) => sum + rd.totalForReceipt, 0);
+                          const sincePerson: BalanceRow = { ...person, receiptDetails: newDetails, total: newTotal };
+                          return (
+                            <>
+                              <button
+                                type="button"
+                                title="Export bills since last settlement"
+                                onClick={(event) => { event.stopPropagation(); exportBalanceXlsx(sincePerson, 'since-settlement'); }}
+                                className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/30 px-3 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 shadow-sm transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-300 dark:hover:border-emerald-700"
+                              >
+                                <FileDown className="w-3.5 h-3.5" /> New Excel
+                              </button>
+                              <button
+                                type="button"
+                                title="Export bills since last settlement"
+                                onClick={(event) => { event.stopPropagation(); exportBalancePdf(sincePerson, 'since-settlement'); }}
+                                className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/30 px-3 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 shadow-sm transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-300 dark:hover:border-emerald-700"
+                              >
+                                <FileDown className="w-3.5 h-3.5" /> New PDF
+                              </button>
+                              <button
+                                type="button"
+                                title="Export full history"
+                                onClick={(event) => { event.stopPropagation(); exportBalanceXlsx(person, 'full-history'); }}
+                                className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 shadow-sm transition-colors hover:border-indigo-200 dark:hover:border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400"
+                              >
+                                <FileDown className="w-3.5 h-3.5" /> All Excel
+                              </button>
+                              <button
+                                type="button"
+                                title="Export full history"
+                                onClick={(event) => { event.stopPropagation(); exportBalancePdf(person, 'full-history'); }}
+                                className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 shadow-sm transition-colors hover:border-indigo-200 dark:hover:border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400"
+                              >
+                                <FileDown className="w-3.5 h-3.5" /> All PDF
+                              </button>
+                            </>
+                          );
+                        }
+                        return (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(event) => { event.stopPropagation(); exportBalanceXlsx(person); }}
+                              className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 shadow-sm transition-colors hover:border-indigo-200 dark:hover:border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Excel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => { event.stopPropagation(); exportBalancePdf(person); }}
+                              className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 shadow-sm transition-colors hover:border-indigo-200 dark:hover:border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> PDF
+                            </button>
+                          </>
+                        );
+                      })()}
                       {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400 dark:text-slate-500" /> : <ChevronDown className="w-5 h-5 text-slate-400 dark:text-slate-500" />}
                     </div>
                   </div>

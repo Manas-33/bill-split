@@ -14,6 +14,7 @@ export interface PersonReceiptDetail {
   items: { name: string; sharePrice: number }[];
   sharedFees: number;
   totalForReceipt: number;
+  receiptTimestamp: number;
 }
 
 export interface BalanceRow {
@@ -32,6 +33,14 @@ export interface OwedBalancesResult {
   others: BalanceRow[];
   /** Sum of non–"you" participants' totals across saved receipts (same as Totals tab). */
   grandTotalOwedToYou: number;
+}
+
+function roundMoney(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function hasSpentOnReceipt(total: number): boolean {
+  return roundMoney(total) > 0;
 }
 
 export function aggregateOwedBalances(
@@ -71,6 +80,8 @@ export function aggregateOwedBalances(
       });
 
       const personTotal = itemsTotal + combinedSharedFees;
+      if (!hasSpentOnReceipt(personTotal)) return;
+
       const nameKey = isMePersonName(person.name) ? ME_AGGREGATE_KEY : person.name.trim();
       const merchant =
         entry.data.merchantName ||
@@ -83,6 +94,7 @@ export function aggregateOwedBalances(
         items: myItems,
         sharedFees: combinedSharedFees,
         totalForReceipt: personTotal,
+        receiptTimestamp: entry.timestamp,
       };
 
       if (balances.has(nameKey)) {
